@@ -1,3 +1,9 @@
+import os
+import bcrypt
+import pymysql
+from base64 import b64encode
+
+
 dagar = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag']
 cleaners = ['<tr>', '</tr>', '<td>', '</td>']
 
@@ -39,10 +45,14 @@ def vecka(html):
     return veckodagar
 
 class user_class:
-    def __init__(self, email, name, password):
+    def __init__(self, userid, email, name, password, verified):
+        self.id =  userid
         self.email = email
         self.name = name
         self.password = password
+        self.verified = verified
+        
 
-
-
+class dbconnector:
+    def __init__(self, host, user, password, db):
+        self.connection = pymysql.connect(host, user, password, db)
