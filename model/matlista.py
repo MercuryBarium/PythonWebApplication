@@ -1,7 +1,7 @@
 #https://pythontic.com/database/mysql/query%20a%20table
 import os
 import bcrypt
-import pymysql
+import pymysql, pymysql.cursors
 from base64 import b64encode, b64decode
 
 
@@ -68,7 +68,15 @@ class user_class:
 
 class dbconnector:
     def __init__(self, host, user, password, db):
-        connection = pymysql.connect(host, user, password, db, charset='utf8mb4')
+        connection = pymysql.connect(
+            host, 
+            user, 
+            password, 
+            db, 
+            charset='utf8mb4', 
+            cursorclass=pymysql.cursors.DictCursor, 
+            autocommit=True)
+        
         self.cur = connection.cursor()
 
     def CreateNewUser(self, email, name, password):
@@ -87,14 +95,30 @@ class dbconnector:
         
         if m == 0 and n == 0:
             self.cur.execute('SELECT COUNT(*) FROM users;')
-            newid = str(self.cur.fetchone()[0] + 1)
-
+            newid   = self.cur.fetchone()['COUNT(*)'] + 1
+            print(newid)
             newuser = user_class(newid, email, name, hashAndSalt(password), 0)
 
-            print('New unverified user has been created. ID:   {}'.format(newid))
+            self.cur.execute("INSERT INTO users VALUES ('{}', '{}', '{}', '{}', {});".format(
+                newuser.id,
+                newuser.email,
+                newuser.name,
+                newuser.password,
+                newuser.verified
+            ))
+            return 'New unverified user successfully created!'
+        
+        elif m > 0 and n == 0:
+            return 'Hm this email address has already been used'
+        
+        elif n > 0 and m == 0:
+            return 'Hm this name has already been used'
+        
+        else:
+            return 'Both email and name has already been used'
+
+        
 
             
 
 
-database = dbconnector('localhost', 'pythonhttp', 'qwerty123', 'matlista')
-database.CreateNewUser('something@email.com', 'joe', 'ABC')
