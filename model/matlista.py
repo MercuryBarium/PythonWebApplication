@@ -3,10 +3,19 @@ import os
 import bcrypt
 import pymysql, pymysql.cursors
 from base64 import b64encode, b64decode
+import smtplib
+import io
+from datetime import datetime
+from time import time
 
 
 dagar       = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag']
 cleaners    = ['<tr>', '</tr>', '<td>', '</td>']
+
+def gettime():
+    timestamp   = time()
+    t           = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+    return t
 
 class dag:
     def __init__(self, html):
@@ -65,19 +74,57 @@ class user_class:
         self.password   = password
         self.verified   = verified
         
-
-class dbconnector:
-    def __init__(self, host, user, password, db):
-        connection = pymysql.connect(
-            host, 
-            user, 
-            password, 
-            db, 
-            charset     ='utf8mb4', 
-            cursorclass =pymysql.cursors.DictCursor, 
-            autocommit  =True)
+class emailer:
+    def __init__(self, serveremail):
+        self.emailuser  = serveremail
+        self.errorlog   = open('errorlog.txt', 'a')
+        try:
+            self.emailserver    = smtplib.SMTP('localhost')
         
-        self.cur = connection.cursor()
+        except Exception as e:
+            print(e)
+            self.errorlog.write('\n{}: {}'.format(gettime(), e))
+            exit()
+            
+    
+    def sendmail(self, recpient, subject, content):
+        mail = '''From: From Person <{}>
+        To: To Person <{}>
+        Subject: {}
+
+        {}
+        '''.format(self.emailuser, recpient, subject, content)
+
+        try:
+            self.emailserver.sendmail(self.emailuser, recpient, mail)
+            return 'Success'
+        
+        except Exception as e:
+            print(e)
+            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+
+class basicusermanager(emailer):
+    def __init__(self, host, user, password, db, serveremail):
+        super().__init__(serveremail)
+        try:
+            connection  = pymysql.connect(
+                host, 
+                user, 
+                password, 
+                db, 
+                charset     = 'utf8mb4', 
+                cursorclass = pymysql.cursors.DictCursor, 
+                autocommit  = True)
+
+            self.cur    = connection.cursor()
+
+        except Exception as e:
+            print(e)
+            self.errorlog.write('\n{}: {}'.format(gettime(), e))
+
+            
+        
+        
 
     #=======================================================================================
     # If function returns 1, an unverified user has been created with a verificationtoken added to the vertokens table.
@@ -85,6 +132,7 @@ class dbconnector:
     # If function returns 3, then the name has already been used and no new user has been created.
     # If function returns 4, then both email and name has already been used and no new user has been created.
     def CreateNewUser(self, email, name, password):
+        unencodedEmail = email
         #B64 encoding is used to prevent SQL-injections
         email   = b64encode(email.encode('utf-8')).decode('utf-8')
         name    = b64encode(name.encode('utf-8')).decode('utf-8')
@@ -101,7 +149,6 @@ class dbconnector:
         if m == 0 and n == 0:
             self.cur.execute('SELECT COUNT(*) FROM users;') 
             newid   = self.cur.fetchone()['COUNT(*)'] + 1
-            print(newid)
             newuser = user_class(newid, email, name, hashAndSalt(password), 0)
 
             self.cur.execute("INSERT INTO users VALUES ('{}', '{}', '{}', '{}', {});".format(
@@ -147,9 +194,15 @@ class dbconnector:
         else:
             return 4 
     
-    
-        
-        
+    def verifyuser(self, email, submittedtoken):
+        email = (b64encode(email.encode('utf-8'))).decode('utf-8')
+        self.cur.execute("SELECT token FROM vertokens WHERE email = '{}'".format(email))
+        actualtoken = self.cur.fetchone()['token']
 
+        if submittedtoken == actualtoken:
+            self.cur.execute("UPDATE users SET verified = 1 WHERE email = '{}'".format(email))
+            return True
         
-
+        else:
+            return False
+        
