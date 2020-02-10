@@ -83,18 +83,15 @@ class emailer:
         
         except Exception as e:
             print(e)
-            self.errorlog.write('\n{}: {}'.format(gettime(), e))
+            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
             exit()
             
     
     def sendmail(self, recpient, subject, content):
-        mail = '''From: From Person <{}>
-        To: To Person <{}>
-        Subject: {}
-
-        {}
-        '''.format(self.emailuser, recpient, subject, content)
-
+        mail = 'From: From Person <{}>'.format(self.emailuser)
+        mail+= '\nTo: To Person <{}>'.format(recpient)
+        mail+= '\nMIME-Version: 1.0\nContent-type: text/html'
+        mail+= '\nSubject: {}\n\n{}'.format(subject, content)
         try:
             self.emailserver.sendmail(self.emailuser, recpient, mail)
             return 'Success'
@@ -120,7 +117,7 @@ class basicusermanager(emailer):
 
         except Exception as e:
             print(e)
-            self.errorlog.write('\n{}: {}'.format(gettime(), e))
+            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
 
             
         
@@ -132,7 +129,6 @@ class basicusermanager(emailer):
     # If function returns 3, then the name has already been used and no new user has been created.
     # If function returns 4, then both email and name has already been used and no new user has been created.
     def CreateNewUser(self, email, name, password):
-        unencodedEmail = email
         #B64 encoding is used to prevent SQL-injections
         email   = b64encode(email.encode('utf-8')).decode('utf-8')
         name    = b64encode(name.encode('utf-8')).decode('utf-8')
