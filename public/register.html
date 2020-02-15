@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html>
     <head>
-
+        <meta charset="UTF-8">
     </head>
     <body>
-        <input type="text" placeholder="name" id="name">
-        <input type="text" placeholder="email" id="email">
-        <input type="password" placeholder="Password" id="password">
-        <p>{}</p>
-        <button id="regbutton">Register</button>
+        <div>
+            <form action="/register", method="POST">
+                <input type="email" name="email" placeholder="Email">
+                <input type="text" name="name" placeholder="Name">
+                <input type="password" name="password", placeholder="Password">
+                <p>{}</p>
+                <button type="submit">Register</button>
+            </form>
+        </div>
     </body>
 </html>

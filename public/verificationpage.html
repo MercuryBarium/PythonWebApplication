@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+    </head>
+    <body>
+        <h3>An email with your verifaction token has been sent.</h3>
+        <div id="form">
+            <form action="/verify" method="POST">
+                <input type="hidden" value="{}" name="email">
+                <input type="text" placeholder="Token" name="token">
+                <p>{}</p>
+                <button type="submit">Submit Token!</button>
+            </form>
+        </div>
+    </body>
+</html>
