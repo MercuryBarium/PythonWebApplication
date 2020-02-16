@@ -73,7 +73,7 @@ def login():
 
         if loginCODE == 1:
             secret  = backend.MakeLoginSession(useremail)
-            resp    = make_response('Success')
+            resp    = make_response('Success', redirect_url='/')
             resp.set_cookie('loginsession', '{}|{}'.format(useremail, secret), max_age=maxlogintime*60*60*24)
             return resp
         
