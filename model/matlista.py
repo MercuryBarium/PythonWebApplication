@@ -176,6 +176,7 @@ class basicusermanager(emailer):
         email = b64encode(email.encode('utf-8')).decode('utf-8')
         self.cur.execute("SELECT email, password, verified FROM users WHERE email = '{}';".format(email))
         data = self.cur.fetchone()
+        secret = 'None'
 
         if data['verified'] == 1:
             if checkPW(pwd, data['password']):
@@ -202,5 +203,14 @@ class basicusermanager(emailer):
         else:
             return False
     
+    def MakeLoginSession(self, email):
+        email   = b64encode(email.encode('utf-8')).decode('utf-8')
+
+        self.cur.execute("DELETE FROM loginsessions WHERE email = '{}';".format(email))
+
+        secret  = b64encode(os.urandom(64)).decode('utf-8')
+
+        self.cur.execute("INSERT INTO loginsessions VALUES ('{}', '{}');".format(email, secret))
+        return secret
     
-        
+    
