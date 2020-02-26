@@ -94,11 +94,12 @@ class emailer:
         mail+= '\nSubject: {}\n\n{}'.format(subject, content)
         try:
             self.emailserver.sendmail(self.emailuser, recpient, mail)
-            return 'Success'
+            return True
         
         except Exception as e:
             print(e)
             self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+            return False
 
 class basicusermanager(emailer):
     def __init__(self, host, user, password, db, serveremail):
@@ -132,12 +133,20 @@ class basicusermanager(emailer):
         #B64 encoding is used to prevent SQL-injections
         email   = b64encode(email.encode('utf-8')).decode('utf-8')
         name    = b64encode(name.encode('utf-8')).decode('utf-8')
-        self.cur.execute("SELECT  email FROM users WHERE email = '{}';".format(email))
-
+        try:
+            self.cur.execute("SELECT  email FROM users WHERE email = '{}';".format(email))
+        except Exception as e:
+            print(e)
+            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+        
         #m is equal to zero if nobody has used the email before
         m       = len(self.cur.fetchall())
         
-        self.cur.execute("SELECT name FROM users WHERE name = '{}';".format(name))
+        try:
+            self.cur.execute("SELECT name FROM users WHERE name = '{}';".format(name))
+        except Exception as e:
+            print(e)
+            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
 
         #n is... well I think you get the idea
         n       = len(self.cur.fetchall())
@@ -146,16 +155,25 @@ class basicusermanager(emailer):
             self.cur.execute('SELECT COUNT(*) FROM users;') 
             newid   = self.cur.fetchone()['COUNT(*)'] + 1
             newuser = user_class(newid, email, name, hashAndSalt(password), 0)
+            try:
+                self.cur.execute("INSERT INTO users VALUES ('{}', '{}', '{}', '{}', {});".format(
+                    newuser.id,
+                    newuser.email,
+                    newuser.name,
+                    newuser.password,
+                    newuser.verified
+                ))
+            except Exception as e:
+                print(e)
+                self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
 
-            self.cur.execute("INSERT INTO users VALUES ('{}', '{}', '{}', '{}', {});".format(
-                newuser.id,
-                newuser.email,
-                newuser.name,
-                newuser.password,
-                newuser.verified
-            ))
             token = b64encode(os.urandom(16)).decode('utf-8')
-            self.cur.execute("INSERT INTO vertokens VALUES ('{}', '{}');".format(email, token))
+            try:
+                self.cur.execute("INSERT INTO vertokens VALUES ('{}', '{}');".format(email, token))
+            except Exception as e:
+                print(e)
+                self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+            
             return 1, token
         
         elif m > 0 and n == 0:
@@ -174,9 +192,13 @@ class basicusermanager(emailer):
     # If function returns 4, then the account does not exist.
     def loginInitialsCompare(self, email, pwd):
         email = b64encode(email.encode('utf-8')).decode('utf-8')
-        self.cur.execute("SELECT email, password, verified FROM users WHERE email = '{}';".format(email))
+        try:
+            self.cur.execute("SELECT email, password, verified FROM users WHERE email = '{}';".format(email))
+        except Exception as e:
+            print(e)
+            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+        
         data = self.cur.fetchone()
-        secret = 'None'
 
         if data['verified'] == 1:
             if checkPW(pwd, data['password']):
@@ -193,11 +215,21 @@ class basicusermanager(emailer):
     
     def verifyuser(self, email, submittedtoken):
         email = (b64encode(email.encode('utf-8'))).decode('utf-8')
-        self.cur.execute("SELECT token FROM vertokens WHERE email = '{}'".format(email))
+        try:
+            self.cur.execute("SELECT token FROM vertokens WHERE email = '{}'".format(email))
+        except Exception as e:
+            print(e)
+            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+
         actualtoken = self.cur.fetchone()['token']
 
         if submittedtoken == actualtoken:
-            self.cur.execute("UPDATE users SET verified = 1 WHERE email = '{}'".format(email))
+            try:
+                self.cur.execute("UPDATE users SET verified = 1 WHERE email = '{}'".format(email))
+            except Exception as e:
+                print(e)
+                self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+            
             return True
         
         else:
@@ -206,11 +238,95 @@ class basicusermanager(emailer):
     def MakeLoginSession(self, email):
         email   = b64encode(email.encode('utf-8')).decode('utf-8')
 
-        self.cur.execute("DELETE FROM loginsessions WHERE email = '{}';".format(email))
-
+        try:
+            self.cur.execute("DELETE FROM loginsessions WHERE email = '{}';".format(email))
+        except Exception as e:
+                print(e)
+                self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+        
         secret  = b64encode(os.urandom(64)).decode('utf-8')
 
-        self.cur.execute("INSERT INTO loginsessions VALUES ('{}', '{}');".format(email, secret))
+        try:
+            self.cur.execute("INSERT INTO loginsessions VALUES ('{}', '{}');".format(email, secret))
+        except Exception as e:
+                print(e)
+                self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+        
         return secret
     
-    
+    def checkSession(self, email, secret):
+        email = b64encode(email.encode('utf-8')).decode('utf-8')
+        
+        try:
+            self.cur.execute("SELECT email, secret FROM loginsessions WHERE email = '{}';".format(email))
+        except Exception as e:
+                print(e)
+                self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+        
+        data = self.cur.fetchone()
+        actualsecret = data['secret']
+        if secret == actualsecret:
+            return True
+
+        else:
+            return False 
+
+    def logoutUser(self, email):
+        email = b64encode(email.encode('utf-8')).decode('utf-8')
+
+        try:
+            self.cur.execute("DELETE FROM loginsessions WHERE email = '{}';")
+        except Exception as e:
+                print(e)
+                self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+
+    def checkuserexists(self, email):
+        try:
+            self.cur.execute("SELECT COUNT(*) FROM users WHERE email = '{}'".format(email))
+        except Exception as e:
+            print(e)
+            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+
+
+        if self.cur.fetchone()['COUNT(*)'] > 0:
+            return True
+        else:
+            return False
+
+    def makepasswordresettoken(self, email):
+        email   = b64encode(email.encode('utf-8')).decode('utf-8')
+        secret  = b64encode(os.urandom(64)).decode('utf-8')
+        if self.checkuserexists(email):
+            try:
+                self.cur.execute("DELETE FROM passwordreset WHERE email = '{}';".format(email))
+                self.cur.execute("INSERT INTO passwordreset VALUES ('{}', '{}')".format(email, secret))
+                return secret, True
+
+            except Exception as e:
+                print(e)
+                self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+                return 'None', False
+        else:
+            return 'None', False
+
+    def resetpassword(self, email, secret, newpassword):
+        email = b64encode(email.encode('utf-8')).decode('utf-8')
+        try:    
+            self.cur.execute("SELECT email, secret FROM passwordreset WHERE email = '{}'".format(email))
+            data = self.cur.fetchone()
+        except Exception as e:
+            print(e)
+            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+            
+        if secret == data['secret']:
+            try:
+                self.cur.execute("UPDATE users SET password = '{}' WHERE email = '{}'".format(hashAndSalt(newpassword), email))
+                return True
+            
+            except Exception as e:
+                print(e)
+                self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+                return False
+        
+        else:
+            return False

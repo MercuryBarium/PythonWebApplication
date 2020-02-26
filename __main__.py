@@ -10,6 +10,7 @@ reghtml         = open('./public/register.html', 'r').read()
 indexhtml       = open('./public/index.html', 'r').read()
 verifactionpage = open('./public/verificationpage.html', 'r').read()
 
+
 #============================================
 maxlogintime = 7
 #============================================
@@ -18,72 +19,101 @@ app = Flask(__name__)
 @app.route('/')
 @app.route('/index')
 def index():
-    return indexhtml.format('yeet')
+    return indexhtml.format('')
 
-@app.route('/register', methods=['POST', 'GET'])
-def register():
-    if request.method == 'GET':
-        return reghtml.format('')
-    
-    if request.method == 'POST':
-        useremail   = request.form.get('email')
-        username    = request.form.get('name')
-        pwd         = request.form.get('password')
-
-        created, token = backend.CreateNewUser(useremail, username, pwd)
-        if created == 1:
-            backend.sendmail(useremail, 'Verificationtoken', '<h1>{}</h1>'.format(token))
-            return redirect('/verify?email={}'.format(useremail))
+#========POST=HANDLERS=======================
+@app.route('/registration', methods=['POST'])
+def registration():
+    useremail   = request.form.get('email')
+    name        = request.form.get('name')
+    password    = request.form.get('password')
+    confirmation= request.form.get('confirmation')
+    if useremail and name and password and confirmation:
+        if useremail.count('@') != 1:
+            return redirect('/register?error=Email-address-is-invalid')
         
-        elif created == 2:
-            return reghtml.format('Email address is already in use.')
-        
-        elif created == 3:
-            return reghtml.format('Name is already in use.')
-        
-        elif created == 4:
-            return reghtml.format('The entered name and email is already in use.')
-
-
-@app.route('/verify', methods=['GET', 'POST'])
-def verify():
-    if request.method == 'GET':
-        return verifactionpage.format(request.args.get('email'), '')
-    
-    elif request.method == 'POST':
-        useremail   = request.form.get('email')
-        token = request.form.get('token')
-        verified    = backend.verifyuser(useremail, token)
-        if verified:
-            return redirect('/login')
-        
+        elif password != confirmation:
+            return redirect('/register?error=Passwords-must-match')
         else:
-            return verifactionpage.format(useremail, 'Wrong token')
+            created, token = backend.CreateNewUser(useremail, name, password)
+            
+            if created == 1:
+                backend.sendmail(useremail, 'Verificationtoken', '<h1>{}</h1>'.format(token))
+                return redirect('/verification?email={}'.format(useremail))
+            
+            elif created == 2:
+                return redirect('/register?error=Email-is-already-in-use')
+            
+            elif created == 3:
+                return redirect('/register?error=Name-is-already-in-use')
+            else:
+                return redirect('/register?error=Both-email-and-name-is-already-in-use')
+    else:
+        return redirect('/register?error=All-fields-must-be-filled-out')
 
-@app.route('/login', methods=['POST', 'GET'])
-def login():
-    if request.method == 'GET':
-        return loginhtml.format('')
+@app.route('/verify', methods=['POST'])
+def verify():
+    if request.form.get('email') and request.form.get('token'):
+        if backend.verifyuser(request.form.get('email'), request.form.get('token')):
+            return redirect('/login')
+        else:
+            return redirect('/verification?email={}?error=Invalid-token'.format(request.form.get('email')))
     
-    elif request.method == 'POST':
-        useremail   = request.form.get('email')
-        pwd         = request.form.get('password')
-        
-        loginCODE   = backend.loginInitialsCompare(useremail, pwd)
+    else:
+        return redirect('/verification?email={}?error=Invalid-form'.format(request.form.get('email')))
 
-        if loginCODE == 1:
+@app.route('/userlogin', methods=['POST'])
+def userlogin():
+    useremail   = request.form.get('email')
+    password    = request.form.get('password')
+    destination = request.form.get('destination')
+    if useremail and password and destination:
+        loginCode = backend.loginInitialsCompare(useremail, password)
+        if loginCode == 1:
             secret  = backend.MakeLoginSession(useremail)
-            resp    = make_response('Success', redirect_url='/')
-            resp.set_cookie('loginsession', '{}|{}'.format(useremail, secret), max_age=maxlogintime*60*60*24)
+            resp    = make_response('<div><script>location.href = "{}"</script></div>'.format(destination)) 
+            resp.set_cookie('loginsession', '{}|{}'.format(useremail, secret))
             return resp
         
-        elif loginCODE == 3:
-            return redirect('/verify?email={}'.format(useremail))
+        elif loginCode == 3:
+            return redirect('/verification?email={}'.format(useremail))
         
         else:
-            return loginhtml.format("Authentication error, the password and or email you've entered is/are incorrect.")
+            return redirect('/login?error=Invalid-login-credentials')
+
+    else:
+        return redirect('/login?error=All-field-are-required')
+
+#============================================
+
+#========GET=HANDLERS========================
+@app.route('/register', methods=['GET'])
+def register():
+    if request.args.get('error'):
+        return reghtml.format(request.args.get('error').replace('-', ' '))
+    else:
+        return reghtml.format('')
+
+@app.route('/verification', methods=['GET'])
+def verification():
+    if request.args.get('error'):
+        return verifactionpage.format(request.args.get('email'), request.args.get('error').replace('-',' '))
+    
+    else:
+        return verifactionpage.format(request.args.get('email'), '')
+
+@app.route('/login', methods=['GET'])
+def login():
+    error = request.args.get('error')
+    if error:
+        return loginhtml.format(error)
+    
+    else:
+        return loginhtml.format('')
 
 
 
+#============================================
 
-app.run('0.0.0.0', 8089)
+
+app.run(debug=True, host='0.0.0.0', port=8089)
