@@ -9,6 +9,8 @@ loginhtml       = open('./public/login.html', 'r').read()
 reghtml         = open('./public/register.html', 'r').read()
 indexhtml       = open('./public/index.html', 'r').read()
 verifactionpage = open('./public/verificationpage.html', 'r').read()
+forgotpasshtml  = open('./public/forgotpassword.html', 'r').read()
+newpasswordhtml = open('./public/newpassword.html', 'r').read()
 
 
 #============================================
@@ -84,6 +86,40 @@ def userlogin():
     else:
         return redirect('/login?error=All-field-are-required')
 
+@app.route('/resettoken', methods=['POST'])
+def resettoken():
+    email = request.form.get('email')
+    if email:
+        secret, created = backend.makepasswordresettoken(email)
+        if created:
+            backend.sendmail(email, 'Password-reset-token', '<h1>{}</h1>'.format(secret))
+            return redirect('/forgotpassword?email={}'.format(email))
+        else:
+            return redirect('/forgotpassword?error=No-account-with-that-email-address-exists')
+    
+    else:
+        return redirect('/forgotpassword?error=Empty-form')
+
+@app.route('/newpassword', methods=['POST'])
+def newpassword():
+    email       = request.form.get('email')
+    password    = request.form.get('password')
+    confirmation= request.form.get('confirmation')
+    code        = request.form.get('resettoken')
+
+    if email and password and confirmation and code:
+        if password == confirmation:
+            if backend.resetpassword(email, code, password):
+                return redirect('/login')
+            
+            else:
+                return redirect('/forgotpassword?email={}&error=Invalid-reset-token'.format(email))
+
+        else:
+            return redirect('/forgotpassword?email={}&error=Password-and-confirmation-needs-to-match')
+    else:
+        return redirect('/forgotpassword?email={}&error=All-fields-needs-to-be-field-out')
+
 #============================================
 
 #========GET=HANDLERS========================
@@ -111,8 +147,22 @@ def login():
     else:
         return loginhtml.format('')
 
+@app.route('/forgotpassword', methods=['GET'])
+def forgotpassword():
+    email   = request.args.get('email')
+    error   = request.args.get('error')
 
-
+    if email:
+        if error:
+            return newpasswordhtml.format(email, error.replace('-', ' ')) 
+        else:
+            return newpasswordhtml.format(email, '')
+    
+    else:
+        if error:
+            return forgotpasshtml.format(error.replace('-', ''))
+        else:
+            return forgotpasshtml.format(error)
 #============================================
 
 

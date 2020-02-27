@@ -282,7 +282,7 @@ class basicusermanager(emailer):
 
     def checkuserexists(self, email):
         try:
-            self.cur.execute("SELECT COUNT(*) FROM users WHERE email = '{}'".format(email))
+            self.cur.execute("SELECT COUNT(*) FROM users WHERE email = '{}';".format(email))
         except Exception as e:
             print(e)
             self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
@@ -299,7 +299,7 @@ class basicusermanager(emailer):
         if self.checkuserexists(email):
             try:
                 self.cur.execute("DELETE FROM passwordreset WHERE email = '{}';".format(email))
-                self.cur.execute("INSERT INTO passwordreset VALUES ('{}', '{}')".format(email, secret))
+                self.cur.execute("INSERT INTO passwordreset VALUES ('{}', '{}');".format(email, secret))
                 return secret, True
 
             except Exception as e:
@@ -312,7 +312,7 @@ class basicusermanager(emailer):
     def resetpassword(self, email, secret, newpassword):
         email = b64encode(email.encode('utf-8')).decode('utf-8')
         try:    
-            self.cur.execute("SELECT email, secret FROM passwordreset WHERE email = '{}'".format(email))
+            self.cur.execute("SELECT email, secret FROM passwordreset WHERE email = '{}';".format(email))
             data = self.cur.fetchone()
         except Exception as e:
             print(e)
@@ -320,7 +320,8 @@ class basicusermanager(emailer):
             
         if secret == data['secret']:
             try:
-                self.cur.execute("UPDATE users SET password = '{}' WHERE email = '{}'".format(hashAndSalt(newpassword), email))
+                self.cur.execute("UPDATE users SET password = '{}' WHERE email = '{}';".format(hashAndSalt(newpassword), email))
+                self.cur.execute("DELETE FROM passwordreset WHERE email = '{}';".format(email))
                 return True
             
             except Exception as e:
