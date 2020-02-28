@@ -7,6 +7,8 @@ import smtplib
 import io
 from datetime import datetime
 from time import time
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 
 dagar       = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag']
@@ -65,7 +67,6 @@ def checkPW(plaintext, hashed):
     else:
         return False
 
-
 class user_class:
     def __init__(self, userid, email, name, password, verified):
         self.id         = userid
@@ -74,6 +75,28 @@ class user_class:
         self.password   = password
         self.verified   = verified
         
+class emailerSSL:
+    def __init__(self, email, password):
+        self.email = email
+        self.errorlog   = open('errorlog.txt', 'a')
+        self.server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        self.server.login(email, password)
+
+    def sendmail(self, recipient, subject, content):
+        mail = MIMEMultipart('alternative')
+        mail['Subject'] = subject
+        mail['From']    = self.email
+        mail['To']      = recipient 
+        
+        mail.attach(MIMEText(content, 'html'))
+
+        try:
+            self.server.sendmail(self.email, recipient, mail.as_string())
+            print('successfully sent mail')
+        except Exception as e:
+            print(e)
+            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+
 class emailer:
     def __init__(self, serveremail):
         self.emailuser  = serveremail
@@ -101,9 +124,9 @@ class emailer:
             self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
             return False
 
-class basicusermanager(emailer):
-    def __init__(self, host, user, password, db, serveremail):
-        super().__init__(serveremail)
+class basicusermanager(emailerSSL):
+    def __init__(self, host, user, password, db, serveremail, emailpassword):
+        super().__init__(serveremail, emailpassword)
         try:
             connection  = pymysql.connect(
                 host, 

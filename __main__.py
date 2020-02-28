@@ -2,7 +2,12 @@ from flask import Flask, request, redirect, make_response
 from model.matlista import basicusermanager
 
 #https://www.youtube.com/watch?v=1oad8uzSVwk
-backend = basicusermanager('localhost', 'pythonhttp', 'qwerty123', 'matlista', 'notmyname@localhost.com')
+config = open('./email.txt', 'r').readlines()
+
+email       = config[0]
+password    = config[1]
+
+backend = basicusermanager('localhost', 'pythonhttp', 'qwerty123', 'matlista', email, password)
 
 #backend.sendmail('joe@localhost.com', 'Hello World', '<h1>Hello World!</h1>')
 loginhtml       = open('./public/login.html', 'r').read()
@@ -21,7 +26,7 @@ app = Flask(__name__)
 @app.route('/')
 @app.route('/index')
 def index():
-    return indexhtml.format('')
+    return indexhtml
 
 #========POST=HANDLERS=======================
 @app.route('/registration', methods=['POST'])
@@ -162,7 +167,7 @@ def forgotpassword():
         if error:
             return forgotpasshtml.format(error.replace('-', ''))
         else:
-            return forgotpasshtml.format(error)
+            return forgotpasshtml.format('')
 #============================================
 
 

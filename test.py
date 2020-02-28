@@ -1,12 +1,8 @@
 import smtplib
 from datetime import datetime
 from time import time
-
-
-config = open('./email.txt', 'r').readlines()
-
-email       = config[0]
-password    = config[1]
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 def gettime():
     timestamp   = time()
@@ -14,27 +10,25 @@ def gettime():
     return t
 
 class emailerSSL:
-    def __init__(self):
+    def __init__(self, email, password):
+        self.email = email
         self.errorlog   = open('errorlog.txt', 'a')
-        self.server = smtplib.SMTP_SSL('protonmail.com', 465)
+        self.server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         self.server.login(email, password)
 
-    def sendMail(self, recipient, subject, content):
-        body = '\r\n'.join([
-            'To: {}'.format(recipient),
-            'From: {}'.format(email),
-            'MIME-Version: 1.0',
-            'Content-type: text/html',
-            'Subject: {}'.format(subject),
-            content
-        ])
+    def sendmail(self, recipient, subject, content):
+        mail = MIMEMultipart('alternative')
+        mail['Subject'] = subject
+        mail['From']    = self.email
+        mail['To']      = recipient 
+        
+        mail.attach(MIMEText(content, 'html'))
 
         try:
-            self.server.sendmail(email, recipient, body)
+            self.server.sendmail(self.email, recipient, mail.as_string())
             print('successfully sent mail')
         except Exception as e:
             print(e)
             self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
 
-server = emailerSSL()
-server.sendMail('vebbe90@gmail.com', 'Hello World', '<h1>Yeet</h1>')
+

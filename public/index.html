@@ -1,11 +1,42 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="UTF-8">
+        <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+         <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+
+        <!-- jQuery library -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+        <!-- Popper JS -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+        <!-- Latest compiled JavaScript -->
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script> 
     </head>
     <body>
-        <h1>Food truck {}</h1>
-        <a href="/register">Go Register!</a>
-        <a href="/login">Go Login!</a>
+        <ul class="nav">
+            <li class="nav-item">
+                <div class="dropdown">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">Login</button>
+                    <div class="dropdown-menu">
+                        <form action="/userlogin" method="post">
+                            <input type="hidden" name="destination" value="/index">
+                            <div class="form-group">
+                                <label for="email">Email: </label>
+                                <input class="form-control" type="email" name="email">
+                                <label for="pwd">Password: </label>
+                                <input class="form-control" type="password" name="password">
+                                <button class="btn btn-primary" type="submit">Login</button>
+                            </div>
+                        </form>
+                        <a class="dropdown-item" href="/forgotpassword">Forgot password</a>
+                    </div>
+                </div>
+            </li>
+            <li class="nav-item btn">
+                <a href="/register">Register</a>
+            </li>
+        </ul>      
     </body>
 </html>
