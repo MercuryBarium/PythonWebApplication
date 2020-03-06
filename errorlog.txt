@@ -1,9 +1,0 @@
-
-
-2020-02-09 22:43:33: {'vebbe90@gmail.com': (550, b'5.1.1 <vebbe90@gmail.com>: Recipient address rejected: gmail.com')}
-
-2020-02-09 22:43:33: {'vebbe90@gmail.com': (550, b'5.1.1 <vebbe90@gmail.com>: Recipient address rejected: gmail.com')}
-
-2020-02-10 20:13:00: (1045, "Access denied for user 'pythonhttp'@'localhost' (using password: YES)")
-
-2020-02-27 22:24:16: expected string or bytes-like object
