@@ -14,6 +14,8 @@ maxlogintime = 7
 #============================================
 app = Flask(__name__)
 
+
+
 @app.route('/')
 @app.route('/index')
 def index():
@@ -34,33 +36,39 @@ def signin():
             return redirect('/index?signinerror=You-are-already-logged-in')
         
         elif email and password:
-            opCode  = backend.loginInitialsCompare(email, password)
-            if opCode == 1:
-                secret = backend.MakeLoginSession(email)
-                resp = make_response('<div><script>window.location = "/index"</script></div>')
-                resp.set_cookie('loginsession', value='%s|%s' % (email, secret))
-                return resp
-            elif opCode == 2 or 4:
-                return redirect('/index?signinerror=Ivalid-login-credentials')
-            
-            elif opCode == 3:
-                return redirect('/verifyuser?email=%s' % email)
+            if backend.checkuserexists(email):    
+                opCode  = backend.loginInitialsCompare(email, password)
+                if opCode == 1:
+                    secret = backend.MakeLoginSession(email)
+                    resp = make_response('<div><script>window.location = "/index"</script></div>')
+                    resp.set_cookie('loginsession', value='%s|%s' % (email, secret))
+                    return resp
+                elif opCode == 2 or 4:
+                    return redirect('/index?signinerror=Invalid-login-credentials')
+                
+                elif opCode == 3:
+                    return redirect('/verifyuser?email=%s' % email)
+            else:
+                return redirect('/index?signinerror=Invalid-login-credentials')
         else:
             return redirect('/index?signinerror=Fill-out-both-fields')
     
     else:
         if email and password:
-            opCode  = backend.loginInitialsCompare(email, password)
-            if opCode == 1:
-                secret = backend.MakeLoginSession(email)
-                resp = make_response('<div><script>window.location = "/index"</script></div>')
-                resp.set_cookie('loginsession', value='%s|%s' % (email, secret))
-                return resp
-            elif opCode == 2 or 4:
-                return redirect('/index?signinerror=Ivalid-login-credentials')
-            
-            elif opCode == 3:
-                return redirect('/verifyuser?email=%s' % email)
+            if backend.checkuserexists(email):    
+                opCode  = backend.loginInitialsCompare(email, password)
+                if opCode == 1:
+                    secret = backend.MakeLoginSession(email)
+                    resp = make_response('<div><script>window.location = "/index"</script></div>')
+                    resp.set_cookie('loginsession', value='%s|%s' % (email, secret))
+                    return resp
+                elif opCode == 2 or 4:
+                    return redirect('/index?signinerror=Ivalid-login-credentials')
+                
+                elif opCode == 3:
+                    return redirect('/verifyuser?email=%s' % email)
+            else:
+                return redirect('/index?signinerror=Invalid-login-credentials')
         else:
             return redirect('/index?signinerror=Fill-out-both-fields')
 
