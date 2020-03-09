@@ -258,7 +258,7 @@ class basicusermanager(emailerSSL):
         else:
             return False
     
-    def MakeLoginSession(self, email):
+    def MakeLoginSession(self, email) -> str:
         email   = b64encode(email.encode('utf-8')).decode('utf-8')
 
         try:
