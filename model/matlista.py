@@ -304,6 +304,7 @@ class basicusermanager(emailerSSL):
                 self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
 
     def checkuserexists(self, email):
+        email = b64encode(email.encode('utf-8')).decode('utf-8')
         try:
             self.cur.execute("SELECT COUNT(*) FROM users WHERE email = '{}';".format(email))
         except Exception as e:
@@ -319,18 +320,16 @@ class basicusermanager(emailerSSL):
     def makepasswordresettoken(self, email):
         email   = b64encode(email.encode('utf-8')).decode('utf-8')
         secret  = b64encode(os.urandom(64)).decode('utf-8')
-        if self.checkuserexists(email):
-            try:
-                self.cur.execute("DELETE FROM passwordreset WHERE email = '{}';".format(email))
-                self.cur.execute("INSERT INTO passwordreset VALUES ('{}', '{}');".format(email, secret))
-                return secret, True
 
-            except Exception as e:
-                print(e)
-                self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
-                return 'None', False
-        else:
-            return 'None', False
+        try:
+            self.cur.execute("DELETE FROM passwordreset WHERE email = '{}';".format(email))
+            self.cur.execute("INSERT INTO passwordreset VALUES ('{}', '{}');".format(email, secret))
+            return secret, True
+
+        except Exception as e:
+            print(e)
+            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+            return 'None', False 
 
     def resetpassword(self, email, secret, newpassword):
         email = b64encode(email.encode('utf-8')).decode('utf-8')

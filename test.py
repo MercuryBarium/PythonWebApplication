@@ -1,3 +1,10 @@
-from public.view import mke_html
+from model.matlista import basicusermanager
 
-print(mke_html('login', ('hello',)))
+config = open('./email.txt', 'r').readlines()
+
+email       = config[0]
+password    = config[1]
+
+backend = basicusermanager('localhost', 'pythonhttp', 'qwerty123', 'matlista', email, password)
+
+print(backend.checkuserexists('vebbe90@gmail.com'))

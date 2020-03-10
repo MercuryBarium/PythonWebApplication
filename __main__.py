@@ -17,9 +17,26 @@ app = Flask(__name__)
 
 
 @app.route('/')
-@app.route('/index')
+
+#===============GET=HANDLERS=================
+@app.route('/index', methods=['GET'])
 def index():
     return get_html('index')
+
+@app.route('/forgotpassword', methods=['GET'])
+def forgotpassword():
+    email   = request.args.get('email')
+
+    if email:
+        return get_html('newpassword')
+    else:
+        return get_html('forgotpassword')
+
+@app.route('/verifyuser', methods=['GET'])
+def verifyuser():
+    return get_html('verificationpage')
+#============================================
+
 
 
 #===============POST=HANDLERS================
@@ -72,9 +89,69 @@ def signin():
         else:
             return redirect('/index?signinerror=Fill-out-both-fields')
 
+@app.route('/resettoken', methods=['POST'])
+def resettoken():
+    email   = request.form.get('email')
+    if email and backend.checkuserexists(email):
+        token, created = backend.makepasswordresettoken(email)
+        if created:
+            backend.sendmail(email, 'Food Truck: Password reset token', get_html('emailtemplate') % ('Password reset token:', token))
+            return redirect('/forgotpassword?email=%s' % email)
+        else:
+            return '<h1>Internal Server Error</h1>'
+    else:
+        return redirect('/forgotpassword?tokenerror=Invalid-email')
+    
+@app.route('/resetpassword', methods=['POST'])
+def resetpassword():
+    email       = request.form.get('email')
+    password    = request.form.get('password')
+    confirmation= request.form.get('confirmation')
+    token       = request.form.get('token')
+    if email and password and confirmation and token:
+        if backend.checkuserexists(email):
+            if password == confirmation:
+                if backend.resetpassword(email, token, password):
+                    return redirect('/index?success=Successful-password-reset')
+                else:
+                    return redirect('/forgotpassword?email=%s&reseterror=' % email)
+            else:
+                return redirect('/forgotpassword?email=%s&reseterror=Password-and-confirmation-must-match' % email)
+        else:
+            return redirect('/forgotpassword?tokenerror=Invalid-email')
+    else:
+        return redirect('/forgotpassword?email=%s&reseterror=All-fields-must-be-filled-out' % email)
+
 @app.route('/signup', methods=['POST'])
 def signup():
-    return 'yaa'
+    email       = request.form.get('email')
+    name        = request.form.get('name')
+    password    = request.form.get('password')
+    confirmation= request.form.get('confirmation')    
+    if email and name and password and confirmation:
+        if password == confirmation:
+            code, token = backend.CreateNewUser(email, name, password)
+            if code == 1:
+                backend.sendmail(email, 'Food Truck: Verification Token', get_html('emailtemplate') % ('Verification Token', token))
+                return redirect('/verifyuser?email=%s' % email)
+            elif code == 2:
+                return redirect('/index?signuperror=Email-address-is-already-in-use')
+            elif code == 3:
+                return redirect('/index?signuperror=Name-is-already-in-use')
+            else:
+                return redirect('/index?signuperror=Both-name-and-email-is-already-in-use')
+        else:
+            return redirect('/index?signuperror=Password-and-confirmation-needs-to-match')
+    else:
+        return redirect('/index?signuperror=All-fields-needs-to-be-filled-out')
+
+@app.route('/verify', methods=['POST'])
+def verify():
+    email   = request.form.get('email')
+    if email:
+    
+    else:
+        
 #============================================
 
 
