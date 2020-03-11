@@ -1,20 +1,81 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, shrik-to-fit=no">
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-        <title>Home</title>
-    </head>
-    <body>
-        <h3>An email with your verifaction token has been sent.</h3>
-        <div id="form">
-            <form action="/verify" method="POST">
-                <input type="hidden" value="{}" name="email">
-                <input type="text" placeholder="Token" name="token">
-                <p>%s</p>
-                <button type="submit">Submit Token!</button>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrik-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <title>Verifaction</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/index">Food Truck</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+
+            </ul>
+        </div>
+    </nav>
+    <div id="messages"></div>
+
+    <div class="container">
+        <div class="col-xl-1-12 border shadow p-3 mb-5 bg-white rounded">
+            <h3>An email with your verification token has been sent</h3>
+            <form action="/verify" method="post">
+                <div id="emailinput">
+
+                </div>
+                <div class="form-group">
+                  <label for="token">Verification Token: </label>
+                  <input type="password" class="form-control" name="token">
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
             </form>
         </div>
-    </body>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
+    <script>
+        const thisURL   = new URL(location.toString())
+
+        var emailinput  = document.getElementById('emailinput')
+        if (thisURL.searchParams.get('email')){
+            var hiddenemail     = document.createElement('input')
+            hiddenemail.type    = 'hidden'
+            var email           = thisURL.searchParams.get('email')
+            hiddenemail.value   = email
+            hiddenemail.name    = 'email'
+            emailinput.appendChild(hiddenemail)
+        } else {
+            emailinput.className= 'form-group'
+            var label           = document.createElement('label')
+            label.htmlFor       = 'email'
+            label.innerText     = 'Email: '
+
+            var userEmailInput  = document.createElement('input')
+            userEmailInput.className    = 'form-control'
+            userEmailInput.type         = 'email'
+            userEmailInput.name         = 'email'
+
+            emailinput.appendChild(label)
+            emailinput.appendChild(userEmailInput)
+        }
+    </script>
+</body>
+
 </html>

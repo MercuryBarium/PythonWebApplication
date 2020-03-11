@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, make_response
+from flask import Flask, request, redirect, make_response, jsonify
 from model.matlista import basicusermanager
 from public.view import get_html
 
@@ -9,9 +9,6 @@ password    = config[1]
 
 backend = basicusermanager('localhost', 'pythonhttp', 'qwerty123', 'matlista', email, password)
 
-#============================================
-maxlogintime = 7
-#============================================
 app = Flask(__name__)
 
 
@@ -21,7 +18,20 @@ app = Flask(__name__)
 #===============GET=HANDLERS=================
 @app.route('/index', methods=['GET'])
 def index():
-    return get_html('index')
+    loginsession    = request.cookies.get('loginsession')
+
+    if loginsession:
+        loginsession    = loginsession.split('|')
+        email           = loginsession[0]
+        secret          = loginsession[1]
+
+        if backend.checkSession(email, secret):
+            return get_html('dashboard')
+        
+        else:
+            return get_html('index')
+    else:
+        return get_html('index')
 
 @app.route('/forgotpassword', methods=['GET'])
 def forgotpassword():
@@ -148,11 +158,32 @@ def signup():
 @app.route('/verify', methods=['POST'])
 def verify():
     email   = request.form.get('email')
+    token   = request.form.get('token')
     if email:
-    
+        if backend.checkuserexists(email):
+            if backend.verifyuser(email, token):
+                return redirect('/index?success=Success,-new-user-is-now-verified')
+            else:
+                return redirect('/verifyuser?email=%s&verificationerror=Token-is-invalid' % email)
+        else:
+            return redirect('/verifyuser?verificationerror=User-does-not-exist')
     else:
-        
-#============================================
+        return redirect('/verifyuser?verificationerror=No-email-specified')
 
+@app.route('/auth', methods=['POST'])
+def auth():
+    ret         = {}
+    authcookie  = request.cookies.get('loginsession')
+    data        = request.json
+    email       = data['email']
+    secret      = data['secret']
+    if backend.checkSession(email, secret):
+        ret['auth_code'] = 'success'
+        
+        return jsonify(ret)
+    else:
+        ret['auth_code'] = 'failed_to_authenticate'
+        return jsonify(ret)
+#============================================
 
 app.run(debug=True, host='0.0.0.0', port=8089, ssl_context=('./cert.pem', './key.pem'))
