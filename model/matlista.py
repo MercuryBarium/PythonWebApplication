@@ -179,7 +179,7 @@ class basicusermanager(emailerSSL):
             newid   = self.cur.fetchone()['COUNT(*)'] + 1
             newuser = user_class(newid, email, name, hashAndSalt(password), 0)
             try:
-                self.cur.execute("INSERT INTO users VALUES ('{}', '{}', '{}', '{}', {});".format(
+                self.cur.execute("INSERT INTO users VALUES ('{}', '{}', '{}', '{}', {}, '[]');".format(
                     newuser.id,
                     newuser.email,
                     newuser.name,
@@ -287,12 +287,15 @@ class basicusermanager(emailerSSL):
                 self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
         
         data = self.cur.fetchone()
-        actualsecret = data['secret']
-        if secret == actualsecret:
-            return True
+        if data:
+            actualsecret = data['secret']
+            if secret == actualsecret:
+                return True
 
+            else:
+                return False 
         else:
-            return False 
+            return False
 
     def logoutUser(self, email):
         email = b64encode(email.encode('utf-8')).decode('utf-8')
@@ -354,3 +357,4 @@ class basicusermanager(emailerSSL):
         else:
             return False
 
+    

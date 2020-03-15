@@ -1,3 +1,3 @@
-from flask import Flask, request, redirect, make_response, json, Response
 
-resp = Response()
+
+jsonstring = {"code":"ResourceNotFound","message":"/preview/app does not exist"}

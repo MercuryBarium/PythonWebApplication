@@ -173,13 +173,12 @@ def verify():
 @app.route('/auth', methods=['POST'])
 def auth():
     ret         = {}
-    authcookie  = request.cookies.get('loginsession')
-    data        = request.json
-    email       = data['email']
-    secret      = data['secret']
+    authcookie  = request.cookies.get('loginsession').split('|')
+    email       = authcookie[0]
+    secret      = authcookie[1]
     if backend.checkSession(email, secret):
         ret['auth_code'] = 'success'
-        
+        print(ret)
         return jsonify(ret)
     else:
         ret['auth_code'] = 'failed_to_authenticate'

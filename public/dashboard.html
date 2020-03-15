@@ -16,7 +16,7 @@
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav mr-auto" >
-                weofkewpfk
+                
             </ul>
         </div>
     </nav>
@@ -43,24 +43,13 @@
             loginpage.appendChild(child)
         }
 
-        async function loadProfile() {
-            var data = document.cookie
-            data = data.replace('loginsession=', '')
-            data = data.replace(new RegExp('|', 'g'), '')
-            data = data.replace(new RegExp(';', 'g'), '')
-            data = data.replace(new RegExp('"', 'g'), '')
-            data = data.split('|')
-
-            useremail = data[0]
-            user_secret = data[1]
-
+        async function dashboardMain() {
             const rawResponse = await fetch('/auth', {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email: useremail, secret: user_secret })
+                }
             });
             const content = await rawResponse.json();
             
@@ -68,15 +57,7 @@
 
 
         }
-
-
-        if ((document.cookie).includes('loginsession')) {
-            loadProfile()
-        } else {
-            location.href = '/index'
-        }
-
-
+        dashboardMain()
 
     </script>
 </body>
