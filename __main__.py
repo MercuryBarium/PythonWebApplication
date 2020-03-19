@@ -170,6 +170,7 @@ def verify():
     else:
         return redirect('/verifyuser?verificationerror=No-email-specified')
 
+#application/json
 @app.route('/auth', methods=['POST'])
 def auth():
     ret         = {}
@@ -178,6 +179,7 @@ def auth():
     secret      = authcookie[1]
     if backend.checkSession(email, secret):
         ret['auth_code'] = 'success'
+        ret['orders']    = backend.getOrders(email)
         print(ret)
         return jsonify(ret)
     else:

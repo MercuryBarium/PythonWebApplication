@@ -9,6 +9,7 @@ from datetime import datetime
 from time import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import json
 
 
 dagar       = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag']
@@ -68,8 +69,7 @@ def checkPW(plaintext, hashed):
         return False
 
 class user_class:
-    def __init__(self, userid, email, name, password, verified):
-        self.id         = userid
+    def __init__(self, email, name, password, verified):
         self.email      = email
         self.name       = name
         self.password   = password
@@ -143,9 +143,6 @@ class basicusermanager(emailerSSL):
             print(e)
             self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
 
-            
-        
-        
 
     #=======================================================================================
     # If function returns 1, an unverified user has been created with a verificationtoken added to the vertokens table.
@@ -157,7 +154,7 @@ class basicusermanager(emailerSSL):
         email   = b64encode(email.encode('utf-8')).decode('utf-8')
         name    = b64encode(name.encode('utf-8')).decode('utf-8')
         try:
-            self.cur.execute("SELECT  email FROM users WHERE email = '{}';".format(email))
+            self.cur.execute("SELECT email FROM users WHERE email = '{}';".format(email))
         except Exception as e:
             print(e)
             self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
@@ -175,12 +172,9 @@ class basicusermanager(emailerSSL):
         n       = len(self.cur.fetchall())
         
         if m == 0 and n == 0:
-            self.cur.execute('SELECT COUNT(*) FROM users;') 
-            newid   = self.cur.fetchone()['COUNT(*)'] + 1
-            newuser = user_class(newid, email, name, hashAndSalt(password), 0)
+            newuser = user_class(email, name, hashAndSalt(password), 0)
             try:
-                self.cur.execute("INSERT INTO users VALUES ('{}', '{}', '{}', '{}', {}, '[]');".format(
-                    newuser.id,
+                self.cur.execute("INSERT INTO users(email, name, password, verified) VALUES ('{}', '{}', '{}', {});".format(
                     newuser.email,
                     newuser.name,
                     newuser.password,
@@ -357,4 +351,21 @@ class basicusermanager(emailerSSL):
         else:
             return False
 
-    
+    def getOrders(self, email) -> list:
+        email       = b64encode(email.encode('utf-8')).decode('utf-8')
+        try:
+            self.cur.execute('SELECT orders FROM users WHERE email="%s"' % email)
+        except Exception as e:
+            self.errorlog.write('\n\n%s: %s' % (gettime(), e))
+            ret     = ['Internal server error']
+            return ret
+        
+        data        = self.cur.fetchone()
+        if data['orders']:
+            ret     = data['orders']
+            #print(ret)
+            return json.loads(ret)
+        
+        else:
+            ret     = []
+            return ret
