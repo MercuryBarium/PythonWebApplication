@@ -11,8 +11,32 @@ backend = basicusermanager('localhost', 'pythonhttp', 'qwerty123', 'matlista', e
 
 app = Flask(__name__)
 
-def retAUTHCODE(req):
-    
+AUTHCODES   = [
+    'User is authenticated',
+    'Admin is authenticated',
+    'Authentication failed',
+    'User does not exist',
+    'Improper auth cookie'
+]
+
+def retAUTHCODE(authcookie) -> tuple:
+    authcookie  = authcookie.split('|')
+    email       = authcookie[0]
+    secret      = authcookie[1]
+
+    if email and secret:
+        if backend.checkuserexists(email):
+            if backend.checkSession(email, secret):
+                if backend.isAdmin(email):
+                    return email, 1
+                else:
+                    return email, 0
+            else:
+                return email, 2
+        else:
+            return email, 3
+    else:
+        return email, 4
 
 @app.route('/')
 

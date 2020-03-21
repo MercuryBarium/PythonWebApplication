@@ -368,20 +368,6 @@ class basicusermanager(emailerSSL):
         else:
             ret     = []
             return ret
-
-    def makepasswordresettoken(self, email):
-        email   = b64encode(email.encode('utf-8')).decode('utf-8')
-        secret  = b64encode(os.urandom(64)).decode('utf-8')
-
-        try:
-            self.cur.execute("DELETE FROM passwordreset WHERE email = '{}';".format(email))
-            self.cur.execute("INSERT INTO passwordreset VALUES ('{}', '{}');".format(email, secret))
-            return secret, True
-
-        except Exception as e:
-            print(e)
-            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
-            return 'None', False 
     
     def makeAdminToken(self, email) -> tuple:
         email   = b64encode(email.encode('utf-8')).decode('utf-8')
