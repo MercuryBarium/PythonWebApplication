@@ -1,4 +1,3 @@
-#https://pythontic.com/database/mysql/query%20a%20table
 import os
 import bcrypt
 import pymysql, pymysql.cursors
@@ -369,3 +368,68 @@ class basicusermanager(emailerSSL):
         else:
             ret     = []
             return ret
+
+    def makepasswordresettoken(self, email):
+        email   = b64encode(email.encode('utf-8')).decode('utf-8')
+        secret  = b64encode(os.urandom(64)).decode('utf-8')
+
+        try:
+            self.cur.execute("DELETE FROM passwordreset WHERE email = '{}';".format(email))
+            self.cur.execute("INSERT INTO passwordreset VALUES ('{}', '{}');".format(email, secret))
+            return secret, True
+
+        except Exception as e:
+            print(e)
+            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+            return 'None', False 
+    
+    def makeAdminToken(self, email) -> tuple:
+        email   = b64encode(email.encode('utf-8')).decode('utf-8')
+        secret  = b64encode(os.urandom(64)).decode('utf-8')
+
+        try:
+            self.cur.execute("DELETE FROM admintokens WHERE email = '%s';" % email)
+            self.cur.execute("INSERT INTO admintokens VALUES ('%s', '%s');" % (email, secret))
+            return secret, True
+
+        except Exception as e:
+            print(e)
+            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
+            return 'None', False 
+
+    def becomeAdmin(self, email, secret) -> bool:
+        email   = b64encode(email.encode('utf-8')).decode('utf-8')
+
+        try:
+            self.cur.execute('SELECT token FROM admintokens WHERE email = "%s"' % email)
+        except Exception as e:
+            self.errorlog.write('\n\n%s: %s' % (gettime(), e))
+        
+        data    = self.cur.fetchone()['token']
+        if data:
+            if secret == data:
+                try:
+                    self.cur.execute('UPDATE users SET admin = 1 WHERE email = %s' % email)
+                    return True
+                except Exception as e:
+                    self.errorlog.write('\n\n%s: %s' % (gettime(), e))
+
+            else:
+                return False
+        else:
+            return False
+
+    def isAdmin(self, email) -> bool:
+        email   = b64encode(email.encode('utf-8')).decode('utf-8')
+        try:
+            self.cur.execute('SELECT admin FROM users WHERE email = %s' % email)
+        except Exception as e:
+            self.errorlog.write('\n\n%s' % e)
+            return False
+
+        data    = self.cur.fetchone()['admin']
+
+        if data == 1:
+            return True
+        else:
+            return False

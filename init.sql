@@ -4,7 +4,17 @@ CREATE DATABASE matlista CHARACTER SET = 'utf8mb4';
 
 USE matlista;
 
-CREATE TABLE users(userid int NOT NULL AUTO_INCREMENT, email text, name text, password text, verified tinyint(4), orders JSON, admin tinyint(4) DEFAULT 0, primary key(userid));
+CREATE TABLE users(
+    userid int NOT NULL AUTO_INCREMENT, 
+    email text, 
+    name text, 
+    password text, 
+    verified tinyint(4) DEFAULT 0, 
+    orders JSON, 
+    admin tinyint(4) NOT NULL DEFAULT 0, 
+    primary key(userid)
+);
+
 CREATE TABLE vertokens(email text, token text);
 CREATE TABLE loginsessions(email text, secret text);
 CREATE TABLE passwordreset(email text, secret text);

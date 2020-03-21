@@ -11,7 +11,8 @@ backend = basicusermanager('localhost', 'pythonhttp', 'qwerty123', 'matlista', e
 
 app = Flask(__name__)
 
-
+def retAUTHCODE(req):
+    
 
 @app.route('/')
 
@@ -173,18 +174,80 @@ def verify():
 #application/json
 @app.route('/auth', methods=['POST'])
 def auth():
-    ret         = {}
+    ret             = {}
+    ret['isAdmin']  = False
     authcookie  = request.cookies.get('loginsession').split('|')
     email       = authcookie[0]
     secret      = authcookie[1]
-    if backend.checkSession(email, secret):
-        ret['auth_code'] = 'success'
-        ret['orders']    = backend.getOrders(email)
-        print(ret)
-        return jsonify(ret)
+    if email and secret:
+        if backend.checkSession(email, secret):
+            ret['auth_code'] = 'success'
+            ret['orders']    = backend.getOrders(email)
+            if backend.isAdmin(email):
+                ret['isAdmin']  = True
+            print(ret)
+            return jsonify(ret)
+        else:
+            ret['auth_code']    = 'failed_to_authenticate'
+            return jsonify(ret)
     else:
-        ret['auth_code'] = 'failed_to_authenticate'
+        ret['auth_code']    = 'no auth cookie'
         return jsonify(ret)
+
+@app.route('/sendadmintoken', methods=['POST'])
+def sendadmintoken():
+    authcookie  = request.cookies.get('loginsession').split('|')
+    email       = authcookie[0]
+    secret      = authcookie[1]
+    jsonINPUT   = request.json
+    ret         = {'code': 'None'}
+    
+    if email and secret:
+        if backend.checkSession(email, secret):
+            if backend.isAdmin(email):
+                if jsonINPUT['email']:
+                    if backend.checkuserexists(jsonINPUT['email']):
+                        secret, created = backend.makeAdminToken(jsonINPUT['email'])
+                        if created:
+                            backend.sendmail(jsonINPUT['email'], 'Admin Token', get_html('emailtemplate') % ('Admin Token', secret))
+                            ret['code'] = 'Success'
+                            return jsonify(ret)
+                        else:
+                            ret['code'] = 'internal server error'
+                            return jsonify(ret)
+                    else:   
+                        ret['code'] = 'User does not exist'
+                else:
+                    ret['code'] = 'input error'
+                    return jsonify(ret)
+            else:
+                ret['code'] = 'You are not admin'
+                return jsonify(ret)
+        else:
+            ret['code'] = 'invalid auth_code'
+            return jsonify(ret)
+    else:
+        ret['code'] = 'No auth cookie'
+        return jsonify(ret)
+
+@app.route('/becomeadmin', methods=['POST'])
+def becomeadmin():
+    authcookie  = request.cookies.get('loginsession').split('|')
+    email       = authcookie[0]
+    secret      = authcookie[0]
+    admintoken  = request.json['admintoken']
+    
+    if email and secret:
+        if backend.checkSession(email, secret):
+            if backend.becomeAdmin(email, admintoken):
+                return jsonify({'code':'Success'})
+            else:
+                return jsonify({'code':'Error'})
+        else:
+            return jsonify({'code':'Unauthenticated'})
+    else:
+        return jsonify({'code':''})
+    
 #============================================
 
 app.run(debug=True, host='0.0.0.0', port=8089, ssl_context=('./cert.pem', './key.pem'))
