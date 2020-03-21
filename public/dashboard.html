@@ -16,7 +16,9 @@
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav mr-auto" >
-                
+                <li class="nav-item">
+                    <a href="/logout">Logout</a>
+                </li>
             </ul>
         </div>
     </nav>
@@ -53,12 +55,16 @@
             });
             const content = await rawResponse.json();
             
-            console.log(content['auth_code'])
+            console.log(content['code'])
 
 
         }
-        dashboardMain()
+        
+        async function makeadmin() {
 
+        }
+        
+        dashboardMain()
     </script>
 </body>
 

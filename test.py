@@ -9,4 +9,4 @@ password    = config[1]
 
 backend = basicusermanager('localhost', 'pythonhttp', 'qwerty123', 'matlista', email, password)
 
-d       = backend.getOrders('marcus.brulls@gmail.com')
+print(backend.emailserver.)

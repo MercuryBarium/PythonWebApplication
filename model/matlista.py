@@ -76,21 +76,23 @@ class user_class:
         
 class emailerSSL:
     def __init__(self, email, password):
-        self.email = email
+        self.email      = email
+        self.password   = password
         self.errorlog   = open('errorlog.txt', 'a')
-        self.server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-        self.server.login(email, password)
+        self.emailserver     = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        self.emailserver.login(email, password)
 
     def sendmail(self, recipient, subject, content):
         mail = MIMEMultipart('alternative')
         mail['Subject'] = subject
         mail['From']    = self.email
         mail['To']      = recipient 
-        
+
         mail.attach(MIMEText(content, 'html'))
 
         try:
-            self.server.sendmail(self.email, recipient, mail.as_string())
+            self.emailserver.login(self.email, self.password)
+            self.emailserver.sendmail(self.email, recipient, mail.as_string())
             print('successfully sent mail')
         except Exception as e:
             print(e)
@@ -185,7 +187,8 @@ class basicusermanager(emailerSSL):
 
             token = b64encode(os.urandom(16)).decode('utf-8')
             try:
-                self.cur.execute("INSERT INTO vertokens VALUES ('{}', '{}');".format(email, token))
+                self.cur.execute("DELETE FROM vertokens WHERE email = '%s'" % email)
+                self.cur.execute("INSERT INTO vertokens VALUES ('%s', '%s');" % (email, token))
             except Exception as e:
                 print(e)
                 self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
@@ -294,7 +297,7 @@ class basicusermanager(emailerSSL):
         email = b64encode(email.encode('utf-8')).decode('utf-8')
 
         try:
-            self.cur.execute("DELETE FROM loginsessions WHERE email = '{}';")
+            self.cur.execute("DELETE FROM loginsessions WHERE email = '%s';" % email)
         except Exception as e:
                 print(e)
                 self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
@@ -369,53 +372,30 @@ class basicusermanager(emailerSSL):
             ret     = []
             return ret
     
-    def makeAdminToken(self, email) -> tuple:
-        email   = b64encode(email.encode('utf-8')).decode('utf-8')
-        secret  = b64encode(os.urandom(64)).decode('utf-8')
-
-        try:
-            self.cur.execute("DELETE FROM admintokens WHERE email = '%s';" % email)
-            self.cur.execute("INSERT INTO admintokens VALUES ('%s', '%s');" % (email, secret))
-            return secret, True
-
-        except Exception as e:
-            print(e)
-            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
-            return 'None', False 
-
-    def becomeAdmin(self, email, secret) -> bool:
+    def becomeAdmin(self, email) -> bool:
         email   = b64encode(email.encode('utf-8')).decode('utf-8')
 
         try:
-            self.cur.execute('SELECT token FROM admintokens WHERE email = "%s"' % email)
+            self.cur.execute('UPDATE users SET admin = 1 WHERE email = %s' % email)
+            return True
         except Exception as e:
             self.errorlog.write('\n\n%s: %s' % (gettime(), e))
-        
-        data    = self.cur.fetchone()['token']
-        if data:
-            if secret == data:
-                try:
-                    self.cur.execute('UPDATE users SET admin = 1 WHERE email = %s' % email)
-                    return True
-                except Exception as e:
-                    self.errorlog.write('\n\n%s: %s' % (gettime(), e))
-
-            else:
-                return False
-        else:
             return False
 
     def isAdmin(self, email) -> bool:
         email   = b64encode(email.encode('utf-8')).decode('utf-8')
         try:
-            self.cur.execute('SELECT admin FROM users WHERE email = %s' % email)
+            self.cur.execute('SELECT admin FROM users WHERE email = "%s"' % email)
         except Exception as e:
             self.errorlog.write('\n\n%s' % e)
             return False
 
-        data    = self.cur.fetchone()['admin']
+        data    = self.cur.fetchone()
+        code    = data['admin']
 
-        if data == 1:
+        if code == 1:
+
             return True
         else:
+            
             return False
