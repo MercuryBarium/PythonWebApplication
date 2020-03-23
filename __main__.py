@@ -1,6 +1,9 @@
 from flask import Flask, request, redirect, make_response, jsonify
-from model.matlista import basicusermanager
+from model.matlista import basicusermanager, vecka
+from model.infogathering.webscraper import scrape
 from public.view import get_html
+from base64 import b64decode
+import datetime
 
 config = open('./email.txt', 'r').readlines()
 
@@ -202,9 +205,6 @@ def auth():
     ret     = {'code':code, 'msg':AUTHCODES[code]}
     if code == 0 or code == 1:
         ret['orders']   = backend.getOrders(email)
-        if code == 1:
-            backend.cur.execute('SELECT email FROM users WHERE 1=1;')
-            ret['profiles'] = backend.cur.fetchall()
         return jsonify(ret)
     else:
         return jsonify(ret)
@@ -229,6 +229,41 @@ def makeadmin():
         ret['opcode']   = 3
         return jsonify(ret)
 
+@app.route('/suggestmenu', methods=['POST'])
+def suggestmenu():
+    email, code = retAUTHCODE(request.cookies.get('loginsession'))
+    ret         = {'code': code, 'msg': AUTHCODES[code]}
+    if code == 1:
+        ret['opcode']       = 'Success'
+        ret['suggested']    = vecka(scrape('http://www.gladakocken.net/veckans-lunchmeny/', 'tr'))
+        return jsonify(ret)
+    else:
+        ret['opcode']       = 'Illegal'
+        return jsonify(ret)
+
+@app.route('/fetchmenues', methods=['POST'])
+def fetchmenus():
+    email, code = retAUTHCODE(request.cookies.get('loginsession'))
+    ret     = {'code': code, 'msg': AUTHCODES[code]}
+    week    = request.get_json()['week']
+    if type(week) == int:
+        if code == 1:
+            ret['opcode']   = 'Success'
+            if week == 0:
+                week    = int(datetime.date.today().strftime('%V'))
+                backend.cur.execute('SELECT * FROM menues WHERE weeknumber = %i;' % week)
+                ret['intweek']  = week
+            else:
+                backend.cur.execute('SELECT * FROM menues WHERE weeknumber = %i' % week)
+                ret['intweek']  = week
+            ret['menus']    = backend.cur.fetchall()
+            return jsonify(ret)
+        else:
+            ret['opcode']   = 'Illegal'
+            return jsonify(ret)
+    else:
+        ret['opcode']   = 'Improper input'
+        return jsonify(ret)
 
 #============================================
 

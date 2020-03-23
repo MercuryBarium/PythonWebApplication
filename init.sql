@@ -19,7 +19,7 @@ CREATE TABLE users(
 CREATE TABLE vertokens(email text, token text);
 CREATE TABLE loginsessions(email text, secret text);
 CREATE TABLE passwordreset(email text, secret text);
-CREATE TABLE menues(weeknumber int, weekday text, menu JSON);
+CREATE TABLE menues(weeknumber int, weekday int, menu JSON);
 CREATE TABLE admintokens(email text, token text);
 
 GRANT UPDATE, INSERT, SELECT ON users TO pythonhttp@localhost;

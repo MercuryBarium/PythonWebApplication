@@ -12,10 +12,8 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="/index">Food Truck</a>
-        
-
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav mr-auto" >
+            <ul class="navbar-nav mr-auto">
                 <li class="nav-item">
                     <a href="/logout">Logout</a>
                 </li>
@@ -23,6 +21,21 @@
         </div>
     </nav>
     <div id="messages"></div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-1-12 border-right">
+                <nav class="navbar navbar-light navbar-expand-sm bg-light">
+                    <ul class="navbar-nav flex-column" id="sidebar">
+
+                    </ul>
+                </nav>
+            </div>
+            <div class="col-xl-1-12 container" id="pageCONTENT">
+
+            </div>
+        </div>
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
         integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
@@ -45,6 +58,29 @@
             loginpage.appendChild(child)
         }
 
+        async function editmenus(weeknumber) {
+            const rawFetch = await fetch('/fetchmenues', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    week: weeknumber
+                })
+            })
+            
+            var content = await rawFetch.json()
+            console.log(content)
+            var pageCONTENT = document.getElementById('pageCONTENT')
+            $('#pageCONTENT').html('')
+            
+            var interfaceROW = document.createElement('div')
+            interfaceROW.className = 'row'
+            var 
+            
+        }
+
         async function dashboardMain() {
             const rawResponse = await fetch('/auth', {
                 method: 'POST',
@@ -54,16 +90,43 @@
                 }
             });
             const content = await rawResponse.json();
-            
-            console.log(content['code'])
+            var sidebar = document.getElementById('sidebar')
+
+            if (content['code'] === 1) {
+                var orders = document.createElement('li')
+                orders.className = 'nav-item'
+                var linkOrders = document.createElement('button')
+                linkOrders.className = 'btn btn-light'
+                linkOrders.type = 'button'
+                linkOrders.id = 'orders'
+                linkOrders.innerText = 'Orders'
+                linkOrders.onclick = function () {
+                    console.log('Does nothing as of now')
+                }
+                orders.appendChild(linkOrders)
+                sidebar.appendChild(orders)
+                
+                var editMenu = document.createElement('li')
+                editMenu.className = 'nav-item'
+                var linkEditMenu = document.createElement('button')
+                linkEditMenu.className = 'btn btn-light'
+                linkEditMenu.type = 'button'
+                linkEditMenu.id = 'editmenu'
+                linkEditMenu.innerText = 'Edit Menu'
+                linkEditMenu.onclick = function(){
+                    editmenus(0)
+                }
+                editMenu.append(linkEditMenu)
+                sidebar.append(editMenu)
+            }
 
 
         }
-        
+
         async function makeadmin() {
 
         }
-        
+
         dashboardMain()
     </script>
 </body>

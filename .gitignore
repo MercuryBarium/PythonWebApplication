@@ -3,3 +3,4 @@ errorlog.txt
 cert.pem
 key.pem
 test.py
+*.pyc
