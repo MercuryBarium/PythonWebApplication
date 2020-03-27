@@ -1,9 +1,9 @@
 from flask import Flask, request, redirect, make_response, jsonify
-from model.matlista import basicusermanager, vecka
+from model.matlista import basicusermanager, vecka, wristwatch
 from model.infogathering.webscraper import scrape
 from public.view import get_html
 from base64 import b64decode
-import datetime
+import datetime, json
 
 config = open('./email.txt', 'r').readlines()
 
@@ -11,6 +11,7 @@ email       = config[0]
 password    = config[1]
 
 backend = basicusermanager('localhost', 'pythonhttp', 'qwerty123', 'matlista', email, password)
+serverTime = wristwatch()
 
 app = Flask(__name__)
 
@@ -235,7 +236,7 @@ def suggestmenu():
     ret         = {'code': code, 'msg': AUTHCODES[code]}
     if code == 1:
         ret['opcode']       = 'Success'
-        ret['suggested']    = vecka(scrape('http://www.gladakocken.net/veckans-lunchmeny/', 'tr'))
+        ret['suggested']    = vecka(str(scrape('http://www.gladakocken.net/veckans-lunchmeny/', 'tr')))
         return jsonify(ret)
     else:
         ret['opcode']       = 'Illegal'
@@ -246,17 +247,25 @@ def fetchmenus():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     ret     = {'code': code, 'msg': AUTHCODES[code]}
     week    = request.get_json()['week']
-    if type(week) == int:
-        if code == 1:
+    year    = request.get_json()['year']
+    if type(week) == int and week >= 0 and type(year) == int:
+        if code == 1 or code == 0:
             ret['opcode']   = 'Success'
             if week == 0:
-                week    = int(datetime.date.today().strftime('%V'))
-                backend.cur.execute('SELECT * FROM menues WHERE weeknumber = %i;' % week)
-                ret['intweek']  = week
+                year, week = serverTime.getCurrentWeekAndYear()
+                backend.cur.execute('SELECT day, menu FROM menues WHERE weeknumber = %i AND year = %i;' % (week, year))
+                ret['year']     = year
+                ret['week']     = week
             else:
-                backend.cur.execute('SELECT * FROM menues WHERE weeknumber = %i' % week)
-                ret['intweek']  = week
-            ret['menus']    = backend.cur.fetchall()
+                backend.cur.execute('SELECT day, menu FROM menues WHERE weeknumber = %i AND year = %i;' % (week, year))
+                ret['week']     = week
+                ret['year']     = year
+            ret['menus']    = []
+            for m in backend.cur.fetchall():
+                m['menu'] = json.loads(m['menu'])
+                for i in range(len(m['menu'])):
+                    m['menu'][i] = b64decode(m['menu'][i].encode('utf-8')).decode('utf-8')
+                ret['menus'].append(m)
             return jsonify(ret)
         else:
             ret['opcode']   = 'Illegal'

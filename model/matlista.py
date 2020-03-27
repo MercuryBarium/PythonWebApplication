@@ -4,7 +4,7 @@ import pymysql, pymysql.cursors
 from base64 import b64encode, b64decode
 import smtplib
 import io
-from datetime import datetime
+import datetime, calendar
 from time import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -365,7 +365,7 @@ class basicusermanager(emailerSSL):
         data        = self.cur.fetchone()
         if data['orders']:
             ret     = data['orders']
-            #print(ret)
+            #print(type(ret))
             return json.loads(ret)
         
         else:
@@ -399,3 +399,35 @@ class basicusermanager(emailerSSL):
         else:
             
             return False
+
+
+class wristwatch:
+    def getCurrentWeekAndYear(self) -> tuple:
+        return int(datetime.date.today().strftime('%Y')), int(datetime.date.today().strftime('%V'))
+    
+    def skipAhead(self, weeksToSkip):
+        if type(weeksToSkip) == int:
+            date = datetime.date.today()
+            date += datetime.timedelta(days=weeksToSkip * 7)
+            return int(date.strftime('%Y')), int(date.strftime('%V'))
+        else:
+            raise TypeError
+
+    def weekdaterange(self, year, week) -> list:
+        if type(year) == int and type(week) == int:
+            ret = []
+            delta = datetime.date(year, 1, 1)
+            if datetime.datetime.weekday(delta) > 0:
+                weekdayDelta = (datetime.datetime.weekday(delta))
+                delta -= datetime.timedelta(days=weekdayDelta)
+            
+            delta += datetime.timedelta(weeks=week)
+
+            for d in range(5):
+                weekday = delta
+                weekday += datetime.timedelta(days=d)
+                ret.append(weekday)
+
+            return ret
+        else:
+            raise TypeError
