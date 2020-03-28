@@ -48,7 +48,7 @@
         crossorigin="anonymous"></script>
     <script>
         const thisURL = new URL(location.toString())
-
+        var incWEEK = 0
         if (thisURL.searchParams.get('success')) {
             var loginpage = document.getElementById('messages')
             var child = document.createElement('div')
@@ -58,11 +58,7 @@
             loginpage.appendChild(child)
         }
 
-        async function editmenus(weeknumber, yearnumber) {
-            if (weeknumber > 52) {
-                weeknumber -= 52
-                yearnumber += 1
-            }
+        async function editmenus(weeknumber) {
             const rawFetch = await fetch('/fetchmenues', {
                 method: 'POST',
                 headers: {
@@ -70,8 +66,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    week: weeknumber,
-                    year: yearnumber
+                    week: weeknumber
                 })
             })
             
@@ -80,10 +75,27 @@
             var pageCONTENT = document.getElementById('pageCONTENT')
             $('#pageCONTENT').html('')
             
-            var interfaceROW = document.createElement('div')
-            interfaceROW.className = 'row'
+            var topRow = document.createElement('div')
+            topRow.className = 'row'
+
+            var colOne = document.createElement('div')
+            colOne.className = 'col'
+            var previous = document.createElement('button')
+            previous.type = 'button'
+            previous.className = 'btn btn-primary'
+            previous.innerText = 'Previous Week'
+            previous.onclick = function() {
+                incWEEK -= 1
+                editmenus(incWEEK)
+            }
+            colOne.append(previous)
+            topRow.append(colOne)
+
+            var colTwo = document.createElement('div')
+            colTwo.className = 'col'
             
-            
+
+            pageCONTENT.append(topRow)
         }
 
         async function dashboardMain() {
@@ -119,7 +131,7 @@
                 linkEditMenu.id = 'editmenu'
                 linkEditMenu.innerText = 'Edit Menu'
                 linkEditMenu.onclick = function(){
-                    editmenus(0, 0)
+                    editmenus(0)
                 }
                 editMenu.append(linkEditMenu)
                 sidebar.append(editMenu)

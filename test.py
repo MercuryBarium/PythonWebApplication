@@ -25,10 +25,7 @@ listWeek = w.weekdaterange(year, week)
 
 menues = vecka(str(scrape('http://www.gladakocken.net/veckans-lunchmeny/', 'tr')))
 
-for d in listWeek:
-    backend.cur.execute('SELECT COUNT(*) FROM menues WHERE year = %i AND weeknumber = %i AND day = "%s";' % (year, week, d))
-    if backend.cur.fetchone()['COUNT(*)'] == 0:
-        menu = menues[datetime.datetime.weekday(d)].getRatter()
-        for i in range(len(menu)):
-            menu[i] = b64encode(menu[i].encode('utf-8')).decode('utf-8')
-        backend.cur.execute("INSERT INTO menues VALUES (%i, %i, '%s', '%s')" % (year, week, d, json.dumps(menu)))
+for d in range(len(listWeek)):
+    print(backend.updateMenu(year, week, listWeek[d], menues[d].getRatter()))
+        
+        

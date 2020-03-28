@@ -400,6 +400,36 @@ class basicusermanager(emailerSSL):
             
             return False
 
+    def updateMenu(self, year, week, date, menues):
+        for s in menues:
+            if not type(s) == str:
+                return False
+
+        if type(year) == int and type(week) == int and type(date) == str and type(menues) == list:
+            for i in range(len(menues)):
+                menues[i] = b64encode(menues[i].encode('utf-8')).decode('utf-8')
+            try:
+                self.cur.execute('SELECT COUNT(*) FROM menues WHERE year = %i AND weeknumber = %i AND day = "%s";' % (year, week, date))
+            except Exception as e:
+                self.errorlog.write('\n\n%s' % e)
+                return False
+            if self.cur.fetchone()['COUNT(*)'] == 0:
+                try:
+                    self.cur.execute("INSERT INTO menues VALUES (%i, %i, '%s', '%s')" % (year, week, date, json.dumps(menues)))
+                    return True
+                except Exception as e:
+                    self.errorlog.write('\n\n%s' % e)
+                    return False
+            else:
+                try:
+                    self.cur.execute("UPDATE menues SET menu = '%s' WHERE year = %i AND weeknumber = %i AND date = %s" % (json.dumps(menues), year, week, date))
+                    return True
+                except Exception as e:
+                    self.errorlog.write('\n\n%s' % e)
+                    return False
+        else:
+            raise TypeError
+
 
 class wristwatch:
     def getCurrentWeekAndYear(self) -> tuple:
@@ -421,12 +451,12 @@ class wristwatch:
                 weekdayDelta = (datetime.datetime.weekday(delta))
                 delta -= datetime.timedelta(days=weekdayDelta)
             
-            delta += datetime.timedelta(weeks=week)
+            delta += datetime.timedelta(weeks=week-1)
 
             for d in range(5):
                 weekday = delta
                 weekday += datetime.timedelta(days=d)
-                ret.append(weekday)
+                ret.append(str(weekday))
 
             return ret
         else:

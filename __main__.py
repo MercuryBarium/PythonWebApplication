@@ -247,16 +247,18 @@ def fetchmenus():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     ret     = {'code': code, 'msg': AUTHCODES[code]}
     week    = request.get_json()['week']
-    year    = request.get_json()['year']
-    if type(week) == int and week >= 0 and type(year) == int:
+    if type(week) == int:
         if code == 1 or code == 0:
             ret['opcode']   = 'Success'
             if week == 0:
-                year, week = serverTime.getCurrentWeekAndYear()
+                year, week  = serverTime.getCurrentWeekAndYear()
+                listDates   = serverTime.weekdaterange(year, week)
                 backend.cur.execute('SELECT day, menu FROM menues WHERE weeknumber = %i AND year = %i;' % (week, year))
                 ret['year']     = year
                 ret['week']     = week
             else:
+                year, week = serverTime.skipAhead(week)
+                listDates = serverTime.weekdaterange(year, week)
                 backend.cur.execute('SELECT day, menu FROM menues WHERE weeknumber = %i AND year = %i;' % (week, year))
                 ret['week']     = week
                 ret['year']     = year
@@ -266,12 +268,52 @@ def fetchmenus():
                 for i in range(len(m['menu'])):
                     m['menu'][i] = b64decode(m['menu'][i].encode('utf-8')).decode('utf-8')
                 ret['menus'].append(m)
+            
+            if len(ret['menus']) == 0:
+                for d in serverTime.weekdaterange(year, week):
+                    ret['menus'].append({'day': d, 'menu': []})
+            
             return jsonify(ret)
         else:
             ret['opcode']   = 'Illegal'
             return jsonify(ret)
     else:
         ret['opcode']   = 'Improper input'
+        return jsonify(ret)
+
+@app.route('/updatemenu', methods=['POST'])
+def updatemenu():
+    email, code     = retAUTHCODE(request.cookies.get('loginsession'))
+    jsonDATA        = request.get_json()
+    year        = jsonDATA['year']
+    week        = jsonDATA['week']
+    day         = jsonDATA['day']
+    menu        = jsonDATA['menu']
+
+    ret         = {'code': code, 'msg': AUTHCODES[code]}
+    if code == 1:
+        if type(year) == int and type(week) == int and type(day) == int:
+            if 0 <= day <= 4:
+                day     = serverTime.weekdaterange(year, week)[day]
+                delta = datetime.datetime.strptime(day, '%Y-%m-%d')
+                if not datetime.datetime.today() < delta:
+                    if backend.updateMenu(year, week, day, menu):
+                        ret['opcode'] = 'success'
+                        return jsonify(ret)
+                    else:
+                        ret['opcode'] = 'Bounced'
+                        return jsonify(ret)
+                else:
+                    ret['opcode'] = 'Cannot update menues the same day they are due'
+                    return jsonify(ret)
+            else:
+                ret['opcode'] = 'Improper Input'
+                return jsonify(ret)
+        else:
+            ret['opcode'] = 'Improper Input'
+            return jsonify(ret)
+    else:
+        ret['opcode'] = 'Illegal'
         return jsonify(ret)
 
 #============================================
