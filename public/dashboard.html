@@ -165,6 +165,47 @@
                 secondROW.append(menuCOL)
             }
             pageCONTENT.append(secondROW)
+
+            var lastROW = document.createElement('div')
+            lastROW.className = 'row'
+
+            var btnCol = document.createElement('div')
+            btnCol.className = 'col'
+            var UpdateMenues = document.createElement('button')
+            UpdateMenues.className = 'btn btn-primary'
+            UpdateMenues.innerText = 'Update Menues'
+            UpdateMenues.onclick = async function() {
+                for (let i = 0; i < 5; i++) {
+                    var menuFORM = document.getElementById('menu ' + i)
+                    var payload = {
+                        'year': content['year'],
+                        'week': content['week'],
+                        'day': i,
+                        'menu': []
+                    }
+                    var inputs = menuFORM.getElementsByTagName('input')
+                    for (let x = 0; x < inputs.length; x++) {
+                        if (inputs[x].value.length > 0){
+                            payload['menu'][x] = inputs[x].value
+                        }
+                    }
+                    
+                    const updateResponse = await fetch('/updatemenu', {
+                        method: 'post',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    })
+                    const cleanResponse = await updateResponse.json()
+                    console.log(cleanResponse['opcode'])
+                }
+            }
+            btnCol.append(UpdateMenues)
+            lastROW.append(btnCol)
+            pageCONTENT.append(lastROW)
+
         }
 
         async function dashboardMain() {

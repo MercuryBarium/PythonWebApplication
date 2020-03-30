@@ -273,6 +273,9 @@ def fetchmenus():
                 for d in serverTime.weekdaterange(year, week):
                     ret['menus'].append({'day': d, 'menu': []})
             
+            
+            
+
             return jsonify(ret)
         else:
             ret['opcode']   = 'Illegal'
@@ -294,9 +297,12 @@ def updatemenu():
     if code == 1:
         if type(year) == int and type(week) == int and type(day) == int:
             if 0 <= day <= 4:
+                if len(menu) == 0:
+                    ret['opcode'] = 'Empty menu'
+                    return jsonify(ret)
                 day     = serverTime.weekdaterange(year, week)[day]
-                delta = datetime.datetime.strptime(day, '%Y-%m-%d')
-                if not datetime.datetime.today() < delta:
+                delta   = datetime.datetime.strptime(day, '%Y-%m-%d')
+                if int(datetime.datetime.today().strftime('%V')) < int(delta.strftime('%V')):
                     if backend.updateMenu(year, week, day, menu):
                         ret['opcode'] = 'success'
                         return jsonify(ret)
@@ -304,7 +310,7 @@ def updatemenu():
                         ret['opcode'] = 'Bounced'
                         return jsonify(ret)
                 else:
-                    ret['opcode'] = 'Cannot update menues the same day they are due'
+                    ret['opcode'] = 'Cannot update menues the same week they are due'
                     return jsonify(ret)
             else:
                 ret['opcode'] = 'Improper Input'
