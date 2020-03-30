@@ -269,12 +269,8 @@ def fetchmenus():
                     m['menu'][i] = b64decode(m['menu'][i].encode('utf-8')).decode('utf-8')
                 ret['menus'].append(m)
             
-            if len(ret['menus']) == 0:
-                for d in serverTime.weekdaterange(year, week):
-                    ret['menus'].append({'day': d, 'menu': []})
-            
-            
-            
+            while code == 1 and len(ret['menus']) != 5:
+                ret['menus'].append({'day': listDates[len(ret['menus'])], 'menu': []})
 
             return jsonify(ret)
         else:
