@@ -235,7 +235,7 @@ class basicusermanager(emailerSSL):
     def verifyuser(self, email, submittedtoken):
         email = (b64encode(email.encode('utf-8'))).decode('utf-8')
         try:
-            self.cur.execute("SELECT token FROM vertokens WHERE email = '{}'".format(email))
+            self.cur.execute("SELECT token FROM vertokens WHERE email = '{}';".format(email))
         except Exception as e:
             print(e)
             self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
@@ -244,7 +244,7 @@ class basicusermanager(emailerSSL):
 
         if submittedtoken == actualtoken:
             try:
-                self.cur.execute("UPDATE users SET verified = 1 WHERE email = '{}'".format(email))
+                self.cur.execute("UPDATE users SET verified = 1 WHERE email = '{}';".format(email))
             except Exception as e:
                 print(e)
                 self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
@@ -353,6 +353,7 @@ class basicusermanager(emailerSSL):
         else:
             return False
 
+#DEPRECATED
     def getOrders(self, email) -> list:
         email       = b64encode(email.encode('utf-8')).decode('utf-8')
         try:
@@ -371,7 +372,8 @@ class basicusermanager(emailerSSL):
         else:
             ret     = []
             return ret
-    
+#======^===
+
     def becomeAdmin(self, email) -> bool:
         email   = b64encode(email.encode('utf-8')).decode('utf-8')
 
@@ -411,22 +413,45 @@ class basicusermanager(emailerSSL):
             try:
                 self.cur.execute('SELECT COUNT(*) FROM menues WHERE year = %i AND weeknumber = %i AND day = "%s";' % (year, week, date))
             except Exception as e:
-                self.errorlog.write('\n\n%s' % e)
+                self.errorlog.write('\n\n%s: %s' % (gettime(), e))
                 return False
             if self.cur.fetchone()['COUNT(*)'] == 0:
                 try:
-                    self.cur.execute("INSERT INTO menues VALUES (%i, %i, '%s', '%s')" % (year, week, date, json.dumps(menues)))
+                    self.cur.execute("INSERT INTO menues VALUES (%i, %i, '%s', '%s');" % (year, week, date, json.dumps(menues)))
                     return True
                 except Exception as e:
-                    self.errorlog.write('\n\n%s' % e)
+                    print(e)
+                    self.errorlog.write('\n\n%s: %s' % (gettime(), e))
                     return False
             else:
                 try:
-                    self.cur.execute("UPDATE menues SET menu = '%s' WHERE year = %i AND weeknumber = %i AND date = %s" % (json.dumps(menues), year, week, date))
+                    self.cur.execute("UPDATE menues SET menu = '%s' WHERE year = %i AND weeknumber = %i AND day = '%s';" % (json.dumps(menues), year, week, date))
                     return True
                 except Exception as e:
-                    self.errorlog.write('\n\n%s' % e)
+                    print(e)
+                    self.errorlog.write('\n\n%s: %s' % (gettime(), e))
                     return False
+        else:
+            raise TypeError
+
+    def orderFOOD(self, year, week, day, order):
+        if type(year) == int and type(week) == int and type(day) == str and type(order) == list:
+            try:
+                self.cur.execute("SELECT menu FROM menues WHERE year = %i AND weeknumber = %i AND day = '%s';" % (year, week, day))
+            except Exception as e:
+                print(e)
+                self.errorlog.write('\n\n%s: %s' % (gettime(), e))
+            data = self.cur.fetchone()['menu']
+            if data:
+                menu    = json.loads(data['menu'])
+                for o in order:
+                    if not type(o['item']) == int and not type(o['amount']) == int:
+                        return False
+                        if not o['item'] >= 0 and not o['item'] < len(data['menu']):
+                            return False
+                
+
+
         else:
             raise TypeError
 
@@ -461,3 +486,14 @@ class wristwatch:
             return ret
         else:
             raise TypeError
+    
+    def inTime(day):
+        day = datetime.datetime.strptime(day, '%Y-%m-%d')
+        day += datetime.timedelta(hours=9)
+
+        now = datetime.datetime.today()
+
+        if now < day:
+            return True
+        else:
+            return False

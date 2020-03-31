@@ -20,21 +20,19 @@
             </ul>
         </div>
     </nav>
-    <div id="messages"></div>
-
+    
     <div class="container-fluid">
-        <div class="row">
-            <div class="col-xs-1-12 border-right">
-                <nav class="navbar navbar-light navbar-expand-sm bg-light h-100">
-                    <ul class="navbar-nav flex-column" id="sidebar">
+        <nav class="navbar navbar-light navbar-expand-sm bg-light h-100 border-bottom">
+            <ul class="navbar-nav" id="sidebar">
 
-                    </ul>
-                </nav>
-            </div>
-            <div class="col-xl-1-12 container" id="pageCONTENT">
+            </ul>
+        </nav>
+    </div>
 
-            </div>
-        </div>
+    <div id="messages"></div>
+    
+    <div class="container-fluid" id="pageCONTENT">
+
     </div>
 
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
@@ -125,6 +123,22 @@
 
                 var menuFORM = document.createElement('form')
                 menuFORM.id = 'menu ' + i
+
+                var addMenu = document.createElement('button')
+                addMenu.className = 'btn btn-success'
+                addMenu.innerText = 'Add menu'
+                addMenu.id = 'addline ' + i
+                addMenu.onclick = function() {
+                    var formGROUP = document.createElement('div')
+                    formGROUP.className = 'form-group'
+                    var menuINPUT = document.createElement('input')
+                    menuINPUT.placeholder = 'Type in menu here'
+                    menuINPUT.type = 'text'
+                    formGROUP.append(menuINPUT)
+                    document.getElementById('menu ' + i).append(formGROUP)
+                }
+                menuCOL.append(addMenu)
+
                 if (content['menus'][i]['menu'].length == 0) {
                     var formGROUP = document.createElement('div')
                     formGROUP.className = 'form-group'
@@ -145,22 +159,9 @@
                         menuFORM.append(formGROUP)
                     } 
                 }
-                var addMenu = document.createElement('button')
-                addMenu.className = 'btn btn-success'
-                addMenu.innerText = 'Add menu'
-                addMenu.id = 'addline ' + i
-                addMenu.onclick = function() {
-                    var formGROUP = document.createElement('div')
-                    formGROUP.className = 'form-group'
-                    var menuINPUT = document.createElement('input')
-                    menuINPUT.placeholder = 'Type in menu here'
-                    menuINPUT.type = 'text'
-                    formGROUP.append(menuINPUT)
-                    document.getElementById('menu ' + i).append(formGROUP)
-                }
+                
 
                 menuCOL.append(menuFORM)
-                menuCOL.append(addMenu)
                 
                 secondROW.append(menuCOL)
             }
@@ -245,6 +246,8 @@
                 }
                 editMenu.append(linkEditMenu)
                 sidebar.append(editMenu)
+
+
             }
 
 

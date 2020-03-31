@@ -306,7 +306,7 @@ def updatemenu():
                         ret['opcode'] = 'Bounced'
                         return jsonify(ret)
                 else:
-                    ret['opcode'] = 'Cannot update menues the same week they are due'
+                    ret['opcode'] = 'Cannot update menues the same or after the week they are due'
                     return jsonify(ret)
             else:
                 ret['opcode'] = 'Improper Input'
@@ -317,6 +317,7 @@ def updatemenu():
     else:
         ret['opcode'] = 'Illegal'
         return jsonify(ret)
+
 
 #============================================
 
