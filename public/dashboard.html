@@ -64,9 +64,7 @@
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    week: weeknumber
-                })
+                body: JSON.stringify({week: weeknumber})
             })
             
             var content = await rawFetch.json()
@@ -242,15 +240,59 @@
                 linkEditMenu.id = 'editmenu'
                 linkEditMenu.innerText = 'Edit Menu'
                 linkEditMenu.onclick = function(){
+                    incWEEK = 0
                     editmenus(0)
                 }
                 editMenu.append(linkEditMenu)
                 sidebar.append(editMenu)
-
-
             }
 
+            var OrderFood = document.createElement('li')
+            OrderFood.className = 'nav-item'
+            var OrderFoodButton = document.createElement('button')
+            OrderFoodButton.className = 'btn btn-light'
+            OrderFoodButton.type = 'button'
+            OrderFoodButton.innerText = 'Order Food'
+            OrderFoodButton.onclick = function(){
+                renderOrderInterface()
+            }
 
+            OrderFood.append(OrderFoodButton)
+            sidebar.append(OrderFood)
+        }
+
+        async function renderOrderInterface() {
+            const rawFetch = await fetch('/fetchmenues', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({week: 0})
+            }) 
+
+            const content = await rawFetch.json()
+
+            var pageCONTENT = document.getElementById('pageCONTENT')
+            $('#pageCONTENT').html('')
+            var firstRow = document.createElement('div')
+            firstRow.className = 'row'
+            var info = document.createElement('h1')
+            info.innerText = content['year'] + ' W' + content['week']
+            firstRow.append(info)
+            pageCONTENT.append(firstRow)
+
+            var secondRow = document.createElement('div')
+            secondRow.className = 'row'
+            for (let i = 0; i < content['menus'].length; i++) {
+                if (content['menus'][i]['menu'].length > 0) {
+                    var orderCOl = document.createElement('div')
+                    orderForm.className = 'col'
+                    var orderForm = document.createElement('form')
+                    
+                }
+            }
+            pageCONTENT.append(secondRow)
         }
 
         async function makeadmin() {

@@ -263,14 +263,17 @@ def fetchmenus():
                 ret['week']     = week
                 ret['year']     = year
             ret['menus']    = []
+
+            if code == 1:
+                for i in range(5):
+                    ret['menus'].insert(i, {'day': listDates[len(ret['menus'])], 'menu': []})
+
             for m in backend.cur.fetchall():
                 m['menu'] = json.loads(m['menu'])
                 for i in range(len(m['menu'])):
                     m['menu'][i] = b64decode(m['menu'][i].encode('utf-8')).decode('utf-8')
-                ret['menus'].append(m)
-            
-            while code == 1 and len(ret['menus']) != 5:
-                ret['menus'].append({'day': listDates[len(ret['menus'])], 'menu': []})
+                
+                ret['menus'][datetime.date.weekday(datetime.datetime.strptime(m['day'], '%Y-%m-%d'))] = m
 
             return jsonify(ret)
         else:
@@ -318,6 +321,39 @@ def updatemenu():
         ret['opcode'] = 'Illegal'
         return jsonify(ret)
 
+@app.route('/updateorder', methods=['POST'])
+def updateorder():
+    email, code = retAUTHCODE(request.cookies.get('loginsession'))
+    ret = {'code': code, 'msg': AUTHCODES[code]}
+    if code == 0 or code == 1:
+        jsonINPUT   = request.get_json()
+        year    = jsonINPUT['year']
+        week    = jsonINPUT['week']
+        day     = jsonINPUT['day']
+        order   = jsonINPUT['order']
+        if year and week and day and order:
+            userID = backend.getUID(email)
+            if wristwatch.inTime(day):
+                todayYear, todayWeek = wristwatch.getCurrentWeekAndYear()
+                if todayYear == year and todayWeek == week:
+                    if backend.orderFOOD(userID, year, week, day, order):
+                        ret['opcode'] = 'Success'
+                        return jsonify(ret)
+                    else:
+                        ret['opcode'] = 'Error'
+                        return jsonify(ret)
+                else:
+                    ret['opcode'] = 'Order must be due the same week'
+                    return jsonify(ret)
+            else:
+                ret['You are too late']
+                return jsonify(ret)
+        else:
+            ret['opcode'] = 'Improper input'
+            return jsonify(ret)
+    else:
+        ret['opcode'] = 'illegal'
+        return jsonify(ret)
 
 #============================================
 

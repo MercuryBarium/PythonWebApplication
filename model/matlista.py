@@ -434,7 +434,16 @@ class basicusermanager(emailerSSL):
         else:
             raise TypeError
 
-    def orderFOOD(self, year, week, day, order):
+    def getUID(self, email):
+        email = b64encode(email.encode('utf-8')).decode('utf-8')
+        self.cur.execute("SELECT userid FROM users WHERE email = '%s'" % email)
+        data = self.cur.fetchone()
+        if data:
+            return self.data['userid']
+        else:
+            return None
+
+    def orderFOOD(self, userid, year, week, day, order):
         if type(year) == int and type(week) == int and type(day) == str and type(order) == list:
             try:
                 self.cur.execute("SELECT menu FROM menues WHERE year = %i AND weeknumber = %i AND day = '%s';" % (year, week, day))
@@ -449,8 +458,19 @@ class basicusermanager(emailerSSL):
                         return False
                         if not o['item'] >= 0 and not o['item'] < len(data['menu']):
                             return False
+                            if not o['amount'] > 0:
+                                return False
                 
-
+                payload = "SELECT COUNT(*) FROM orders WHERE userid = %i AND year = %i AND weeknumber = %i AND date = '%s';" % (userid, year, week, day)
+                self.cur.execute(payload)
+                
+                data = self.cur.fetchone()
+                if data['COUNT(*)'] > 0:
+                    self.cur.execute("UPDATE orders SET menu = '%s' WHERE userid = %i AND year = %i AND weeknumber = %i AND date = '%s';")
+                    return True
+                else:
+                    self.cur.execute("INSERT INTO orders VALUES (%i, %i, %i, '%s', '%s');" % (userid, year, week, day, order))
+                    return True
 
         else:
             raise TypeError
@@ -487,8 +507,11 @@ class wristwatch:
         else:
             raise TypeError
     
-    def inTime(day):
-        day = datetime.datetime.strptime(day, '%Y-%m-%d')
+    def inTime(self, day):
+        try:
+            day = datetime.datetime.strptime(day, '%Y-%m-%d')
+        except:
+            return False
         day += datetime.timedelta(hours=9)
 
         now = datetime.datetime.today()
