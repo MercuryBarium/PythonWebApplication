@@ -10,28 +10,36 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import json
 
-
+#Glada kocken är en svensk sida, och när vi skrapar innehållet ifrån 
+#den så vill vi dela in menyerna i veckodagar precis som på sidan.
 dagar       = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag']
-cleaners    = ['<tr>', '</tr>', '<td>', '</td>']
 
+#Funktionen nedan är en förkortning för att snabbt få fram tiden i form av text.
 def gettime():
     timestamp   = time()
     t           = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
     return t
 
+#När vi har delat upp html-innhehållet i veckodagar sätter vi in resterande html
+#i nedanstående klass som i sin tur delar upp rätterna.
 class dag:
     def __init__(self, html):
         self.dag = 'Default'
+        #Här används ovanstående lista med veckodagar för att hitta vilken dag det är i html-koden.
         for d in dagar:
             if html.count(d):
                 self.dag = d
                 break
+                #Ifall en dag hittas så bryts loopen med ovenstående break-statement.
 
+        #Resterande bit av initieringsmetoden delar upp resterande html-kod
+        #och hittar maträtter genom ett format "n: " där n är nummer som verkar vara konstant på Glada Kockens hemsida.
         self.ratter = []
         html = html.split('\n')
         for line in html:
             for x in range(1, 10):
                 if line.count('{}:'.format(x)):
+                    #När en rätt har hittats filtreras resterande text.
                     line = line.replace('</tr>, <tr><td>', '')
                     line = line.replace('</td>', '')
                     line = line.replace('&amp;', '&')
@@ -44,6 +52,7 @@ class dag:
         return self.dag
 
 
+#Nedanstående funktion returnerar en lista med klassen ovan (dag).
 def vecka(html):
     matlistor = html.split('<th')
 
@@ -56,11 +65,13 @@ def vecka(html):
 
     return veckodagar
 
-
+#Textformatet som används i den här applikationen är utf-8 
+#men modulen (bcrypt) som jag använder för kryptera och salta lösenord använder sig av bytecode. 
+#Därför gjorde jag en förkortning som jag refererar till senare.
 def hashAndSalt(plaintext):
     return (bcrypt.hashpw(plaintext.encode('utf-8'), bcrypt.gensalt())).decode('utf-8')
 
-
+#Samma sak gäller när man ska kolla ifall ett lösenord stämmer.
 def checkPW(plaintext, hashed):
     if bcrypt.checkpw(plaintext.encode('utf-8'), hashed.encode('utf-8')):
         return True
@@ -73,31 +84,9 @@ class user_class:
         self.name       = name
         self.password   = password
         self.verified   = verified
-        
-class emailerSSL:
-    def __init__(self, email, password):
-        self.email      = email
-        self.password   = password
-        self.errorlog   = open('errorlog.txt', 'a')
-        self.emailserver     = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-        self.emailserver.login(email, password)
 
-    def sendmail(self, recipient, subject, content):
-        mail = MIMEMultipart('alternative')
-        mail['Subject'] = subject
-        mail['From']    = self.email
-        mail['To']      = recipient 
-
-        mail.attach(MIMEText(content, 'html'))
-
-        try:
-            self.emailserver.login(self.email, self.password)
-            self.emailserver.sendmail(self.email, recipient, mail.as_string())
-            print('successfully sent mail')
-        except Exception as e:
-            print(e)
-            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
-
+#Nedanstående mejl-klass använder SMTP (Simple Mail Transfer Protocol) för att ansluta till en mail server
+#sända ut mejl till användare. Den användes tillsammans med en lokal mejlserver endast för prövning.
 class emailer:
     def __init__(self, serveremail):
         self.emailuser  = serveremail
@@ -124,6 +113,33 @@ class emailer:
             print(e)
             self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
             return False
+
+#Ovanstående klass (emailer) blev tillslut ersatt av nedanstående klass (emailerSSL) som används nu.
+class emailerSSL:
+    def __init__(self, email, password):
+        self.email      = email
+        self.password   = password
+        #Eftersom vi vill kunna logga fel som inträffar i försändelsen av mejl öppnas därför errorlog.txt i den här klassen
+        #som sedan ärvs av klassen "basicusermanager".
+        self.errorlog   = open('errorlog.txt', 'a')
+        self.emailserver     = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        self.emailserver.login(email, password)
+
+    def sendmail(self, recipient, subject, content):
+        mail = MIMEMultipart('alternative')
+        mail['Subject'] = subject
+        mail['From']    = self.email
+        mail['To']      = recipient 
+
+        mail.attach(MIMEText(content, 'html'))
+
+        try:
+            self.emailserver.login(self.email, self.password)
+            self.emailserver.sendmail(self.email, recipient, mail.as_string())
+            print('successfully sent mail')
+        except Exception as e:
+            print(e)
+            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
 
 class basicusermanager(emailerSSL):
     def __init__(self, host, user, password, db, serveremail, emailpassword):
@@ -439,7 +455,7 @@ class basicusermanager(emailerSSL):
         self.cur.execute("SELECT userid FROM users WHERE email = '%s'" % email)
         data = self.cur.fetchone()
         if data:
-            return self.data['userid']
+            return data['userid']
         else:
             return None
 
@@ -450,9 +466,10 @@ class basicusermanager(emailerSSL):
             except Exception as e:
                 print(e)
                 self.errorlog.write('\n\n%s: %s' % (gettime(), e))
+                return False
             data = self.cur.fetchone()['menu']
             if data:
-                menu    = json.loads(data['menu'])
+                menu    = json.loads(data)
                 for o in order:
                     if not type(o['item']) == int and not type(o['amount']) == int:
                         return False
@@ -461,62 +478,67 @@ class basicusermanager(emailerSSL):
                             if not o['amount'] > 0:
                                 return False
                 
-                payload = "SELECT COUNT(*) FROM orders WHERE userid = %i AND year = %i AND weeknumber = %i AND date = '%s';" % (userid, year, week, day)
+                payload = "SELECT COUNT(*) FROM orders WHERE userid = %i AND year = %i AND weeknumber = %i AND day = '%s';" % (userid, year, week, day)
                 self.cur.execute(payload)
                 
                 data = self.cur.fetchone()
                 if data['COUNT(*)'] > 0:
-                    self.cur.execute("UPDATE orders SET menu = '%s' WHERE userid = %i AND year = %i AND weeknumber = %i AND date = '%s';")
+                    self.cur.execute('UPDATE orders SET foodorder = "%s" WHERE userid = %i AND year = %i AND weeknumber = %i AND date = "%s";')
                     return True
                 else:
-                    self.cur.execute("INSERT INTO orders VALUES (%i, %i, %i, '%s', '%s');" % (userid, year, week, day, order))
+                    print('INSERT INTO orders VALUES (%i, %i, %i, "%s", "%s");' % (userid, year, week, day, order))
+                    self.cur.execute('INSERT INTO orders VALUES (%i, %i, %i, "%s", "%s");' % (userid, year, week, day, order))
                     return True
 
         else:
-            raise TypeError
-
-
-class wristwatch:
-    def getCurrentWeekAndYear(self) -> tuple:
-        return int(datetime.date.today().strftime('%Y')), int(datetime.date.today().strftime('%V'))
-    
-    def skipAhead(self, weeksToSkip):
-        if type(weeksToSkip) == int:
-            date = datetime.date.today()
-            date += datetime.timedelta(days=weeksToSkip * 7)
-            return int(date.strftime('%Y')), int(date.strftime('%V'))
-        else:
-            raise TypeError
-
-    def weekdaterange(self, year, week) -> list:
-        if type(year) == int and type(week) == int:
-            ret = []
-            delta = datetime.date(year, 1, 1)
-            if datetime.datetime.weekday(delta) > 0:
-                weekdayDelta = (datetime.datetime.weekday(delta))
-                delta -= datetime.timedelta(days=weekdayDelta)
-            
-            delta += datetime.timedelta(weeks=week-1)
-
-            for d in range(5):
-                weekday = delta
-                weekday += datetime.timedelta(days=d)
-                ret.append(str(weekday))
-
-            return ret
-        else:
-            raise TypeError
-    
-    def inTime(self, day):
-        try:
-            day = datetime.datetime.strptime(day, '%Y-%m-%d')
-        except:
+            print('year:  ' + str(type(year)))
+            print('week:  ' + str(type(week)))
+            print('day:   ' + str(type(day)))
+            print('order: ' + str(type(order)))
             return False
-        day += datetime.timedelta(hours=9)
 
-        now = datetime.datetime.today()
 
-        if now < day:
-            return True
-        else:
-            return False
+
+def getCurrentWeekAndYear() -> tuple:
+    return int(datetime.date.today().strftime('%Y')), int(datetime.date.today().strftime('%V'))
+
+def skipAhead(weeksToSkip):
+    if type(weeksToSkip) == int:
+        date = datetime.date.today()
+        date += datetime.timedelta(days=weeksToSkip * 7)
+        return int(date.strftime('%Y')), int(date.strftime('%V'))
+    else:
+        raise TypeError
+
+def weekdaterange(year, week) -> list:
+    if type(year) == int and type(week) == int:
+        ret = []
+        delta = datetime.date(year, 1, 1)
+        if datetime.datetime.weekday(delta) > 0:
+            weekdayDelta = (datetime.datetime.weekday(delta))
+            delta -= datetime.timedelta(days=weekdayDelta)
+        
+        delta += datetime.timedelta(weeks=week-1)
+
+        for d in range(5):
+            weekday = delta
+            weekday += datetime.timedelta(days=d)
+            ret.append(str(weekday))
+
+        return ret
+    else:
+        raise TypeError
+
+def inTime(day):
+    try:
+        day = datetime.datetime.strptime(day, '%Y-%m-%d')
+    except:
+        return False
+    day += datetime.timedelta(hours=9)
+
+    now = datetime.datetime.today()
+
+    if now < day:
+        return True
+    else:
+        return False

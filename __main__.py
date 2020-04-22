@@ -1,5 +1,6 @@
 from flask import Flask, request, redirect, make_response, jsonify
-from model.matlista import basicusermanager, vecka, wristwatch
+from model.matlista import basicusermanager, vecka
+from model.matlista import getCurrentWeekAndYear, skipAhead, weekdaterange, inTime
 from model.infogathering.webscraper import scrape
 from public.view import get_html
 from base64 import b64decode
@@ -11,7 +12,7 @@ email       = config[0]
 password    = config[1]
 
 backend = basicusermanager('localhost', 'pythonhttp', 'qwerty123', 'matlista', email, password)
-serverTime = wristwatch()
+
 
 app = Flask(__name__)
 
@@ -251,22 +252,22 @@ def fetchmenus():
         if code == 1 or code == 0:
             ret['opcode']   = 'Success'
             if week == 0:
-                year, week  = serverTime.getCurrentWeekAndYear()
-                listDates   = serverTime.weekdaterange(year, week)
+                year, week  = getCurrentWeekAndYear()
+                listDates   = weekdaterange(year, week)
                 backend.cur.execute('SELECT day, menu FROM menues WHERE weeknumber = %i AND year = %i;' % (week, year))
                 ret['year']     = year
                 ret['week']     = week
             else:
-                year, week = serverTime.skipAhead(week)
-                listDates = serverTime.weekdaterange(year, week)
+                year, week = skipAhead(week)
+                listDates = weekdaterange(year, week)
                 backend.cur.execute('SELECT day, menu FROM menues WHERE weeknumber = %i AND year = %i;' % (week, year))
                 ret['week']     = week
                 ret['year']     = year
             ret['menus']    = []
 
-            if code == 1:
-                for i in range(5):
-                    ret['menus'].insert(i, {'day': listDates[len(ret['menus'])], 'menu': []})
+            
+            for i in range(5):
+                ret['menus'].insert(i, {'day': listDates[len(ret['menus'])], 'menu': []})
 
             for m in backend.cur.fetchall():
                 m['menu'] = json.loads(m['menu'])
@@ -327,14 +328,21 @@ def updateorder():
     ret = {'code': code, 'msg': AUTHCODES[code]}
     if code == 0 or code == 1:
         jsonINPUT   = request.get_json()
-        year    = jsonINPUT['year']
-        week    = jsonINPUT['week']
+        year    = 0
+        week    = 0
         day     = jsonINPUT['day']
+        try:
+            year    = int(datetime.date.strftime(datetime.datetime.strptime(day, '%Y-%m-%d'), '%Y'))
+            week    = int(datetime.date.strftime(datetime.datetime.strptime(day, '%Y-%m-%d'), '%V'))
+        except:
+            ret['opcode'] = 'Date format issues'
+            return jsonify(ret)
+        
         order   = jsonINPUT['order']
         if year and week and day and order:
             userID = backend.getUID(email)
-            if wristwatch.inTime(day):
-                todayYear, todayWeek = wristwatch.getCurrentWeekAndYear()
+            if inTime(day=day):
+                todayYear, todayWeek = getCurrentWeekAndYear()
                 if todayYear == year and todayWeek == week:
                     if backend.orderFOOD(userID, year, week, day, order):
                         ret['opcode'] = 'Success'
@@ -346,7 +354,7 @@ def updateorder():
                     ret['opcode'] = 'Order must be due the same week'
                     return jsonify(ret)
             else:
-                ret['You are too late']
+                ret['opcode'] = 'You are too late'
                 return jsonify(ret)
         else:
             ret['opcode'] = 'Improper input'

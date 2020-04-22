@@ -20,7 +20,7 @@ CREATE TABLE loginsessions(email text, secret text);
 CREATE TABLE passwordreset(email text, secret text);
 CREATE TABLE menues(year int, weeknumber int, day text, menu JSON);
 CREATE TABLE admintokens(email text, token text);
-CREATE TABLE orders(userid int, year int , weeknumber int, day text, order JSON, primary key(userid));
+CREATE TABLE orders(userid int, year int , weeknumber int, day text, foodorder JSON);
 
 GRANT UPDATE, INSERT, SELECT ON users TO pythonhttp@localhost;
 GRANT INSERT, SELECT, DELETE ON vertokens TO pythonhttp@localhost;

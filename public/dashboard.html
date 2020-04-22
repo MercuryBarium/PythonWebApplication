@@ -20,7 +20,7 @@
             </ul>
         </div>
     </nav>
-    
+
     <div class="container-fluid">
         <nav class="navbar navbar-light navbar-expand-sm bg-light h-100 border-bottom">
             <ul class="navbar-nav" id="sidebar">
@@ -30,7 +30,7 @@
     </div>
 
     <div id="messages"></div>
-    
+
     <div class="container-fluid" id="pageCONTENT">
 
     </div>
@@ -64,14 +64,14 @@
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({week: weeknumber})
+                body: JSON.stringify({ week: weeknumber })
             })
-            
+
             var content = await rawFetch.json()
             console.log(content)
             var pageCONTENT = document.getElementById('pageCONTENT')
             $('#pageCONTENT').html('')
-            
+
             var topRow = document.createElement('div')
             topRow.className = 'row border-bottom'
 
@@ -81,7 +81,7 @@
             previous.type = 'button'
             previous.className = 'btn btn-primary'
             previous.innerText = 'Previous Week'
-            previous.onclick = function() {
+            previous.onclick = function () {
                 incWEEK -= 1
                 editmenus(incWEEK)
             }
@@ -100,7 +100,7 @@
             var NextWeek = document.createElement('button')
             NextWeek.className = 'btn btn-primary'
             NextWeek.innerText = 'Next Week'
-            NextWeek.onclick = function(){
+            NextWeek.onclick = function () {
                 incWEEK += 1
                 editmenus(incWEEK)
             }
@@ -126,7 +126,7 @@
                 addMenu.className = 'btn btn-success'
                 addMenu.innerText = 'Add menu'
                 addMenu.id = 'addline ' + i
-                addMenu.onclick = function() {
+                addMenu.onclick = function () {
                     var formGROUP = document.createElement('div')
                     formGROUP.className = 'form-group'
                     var menuINPUT = document.createElement('input')
@@ -155,12 +155,12 @@
                         menuINPUT.value = content['menus'][i]['menu'][x]
                         formGROUP.append(menuINPUT)
                         menuFORM.append(formGROUP)
-                    } 
+                    }
                 }
-                
+
 
                 menuCOL.append(menuFORM)
-                
+
                 secondROW.append(menuCOL)
             }
             pageCONTENT.append(secondROW)
@@ -173,7 +173,7 @@
             var UpdateMenues = document.createElement('button')
             UpdateMenues.className = 'btn btn-primary'
             UpdateMenues.innerText = 'Update Menues'
-            UpdateMenues.onclick = async function() {
+            UpdateMenues.onclick = async function () {
                 for (let i = 0; i < 5; i++) {
                     var menuFORM = document.getElementById('menu ' + i)
                     var payload = {
@@ -184,11 +184,11 @@
                     }
                     var inputs = menuFORM.getElementsByTagName('input')
                     for (let x = 0; x < inputs.length; x++) {
-                        if (inputs[x].value.length > 0){
+                        if (inputs[x].value.length > 0) {
                             payload['menu'][x] = inputs[x].value
                         }
                     }
-                    
+
                     const updateResponse = await fetch('/updatemenu', {
                         method: 'post',
                         headers: {
@@ -231,7 +231,7 @@
                 }
                 orders.appendChild(linkOrders)
                 sidebar.appendChild(orders)
-                
+
                 var editMenu = document.createElement('li')
                 editMenu.className = 'nav-item'
                 var linkEditMenu = document.createElement('button')
@@ -239,7 +239,7 @@
                 linkEditMenu.type = 'button'
                 linkEditMenu.id = 'editmenu'
                 linkEditMenu.innerText = 'Edit Menu'
-                linkEditMenu.onclick = function(){
+                linkEditMenu.onclick = function () {
                     incWEEK = 0
                     editmenus(0)
                 }
@@ -253,7 +253,7 @@
             OrderFoodButton.className = 'btn btn-light'
             OrderFoodButton.type = 'button'
             OrderFoodButton.innerText = 'Order Food'
-            OrderFoodButton.onclick = function(){
+            OrderFoodButton.onclick = function () {
                 renderOrderInterface()
             }
 
@@ -268,8 +268,8 @@
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({week: 0})
-            }) 
+                body: JSON.stringify({ week: 0 })
+            })
 
             const content = await rawFetch.json()
 
@@ -287,9 +287,47 @@
             for (let i = 0; i < content['menus'].length; i++) {
                 if (content['menus'][i]['menu'].length > 0) {
                     var orderCOl = document.createElement('div')
-                    orderForm.className = 'col'
+                    orderCOl.className = 'col border shadow p-3 mb-5 bg-white rounded'
+                    var menuDate = document.createElement('h3')
+                    menuDate.innerText = content['menus'][i]['day']
+                    orderCOl.append(menuDate)
                     var orderForm = document.createElement('form')
-                    
+                    orderForm.id = 'menu ' + i
+                    var formDate = document.createElement('input')
+                    formDate.type = 'hidden'
+                    formDate.name = 'date'
+                    formDate.value = content['menus'][i]['day']
+                    orderForm.append(formDate)
+                    for (let x = 0; x < content['menus'][i]['menu'].length; x++) {
+                        var group = document.createElement('div')
+                        group.className = 'form-group border-bottom'
+
+                        var label = document.createElement('label')
+                        label.htmlFor = x
+                        label.innerText = content['menus'][i]['menu'][x]
+                        var input = document.createElement('input')
+                        input.className = 'form-control'
+                        input.type = 'number'
+                        input.min = 0
+                        input.name = x
+                        input.value = 0
+
+                        group.append(label)
+                        group.append(input)
+                        orderForm.append(group)
+                    }
+
+                    var submit = document.createElement('button')
+                    submit.className = 'btn btn-primary'
+                    submit.type = 'button'
+                    submit.innerText = 'Submit'
+                    submit.onclick = function () {
+                        placeOrder('menu ' + i)
+                    }
+                    orderForm.append(submit)
+
+                    orderCOl.append(orderForm)
+                    secondRow.append(orderCOl)
                 }
             }
             pageCONTENT.append(secondRow)
@@ -299,7 +337,40 @@
 
         }
 
+        async function placeOrder(order) {
+            const inputs = document.getElementById(order).getElementsByTagName('input')
+            var payload = {
+                day: inputs[0].value,
+                order: []
+            }
+
+            for (let i = 1; i < inputs.length; i++) {
+                food = i - 1
+                quant = parseInt(inputs[i].value)
+                if (quant > 0) {
+                    payload.order[food] = { item: food, amount: quant }
+                }
+            }
+            console.log(payload.order[0])
+            if (payload.order.length > 0) {
+                const rawResponse = await fetch('/updateorder', {
+                    method: 'post',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                const cleanResponse = await rawResponse.json()
+
+                console.log(cleanResponse['opcode'])
+            } else {
+                console.log('empty')
+            }
+        }
+
         dashboardMain()
+        renderOrderInterface()
     </script>
 </body>
 
