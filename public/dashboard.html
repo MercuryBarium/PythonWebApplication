@@ -199,6 +199,18 @@
                     })
                     const cleanResponse = await updateResponse.json()
                     console.log(cleanResponse['opcode'])
+
+                    var alerts = document.getElementById('messages')
+                    alerts.innerHTML = ''
+                    var child = document.createElement('div')
+                    if (cleanResponse['opcode'] == 'success') {
+                        child.className = 'alert alert-success'
+                        child.textContent = 'Successfully edited menu'
+                    } else {
+                        child.className = 'alert alert-danger'
+                        child.innerText = cleanResponse['opcode']
+                    }
+                    alerts.appendChild(child)
                 }
             }
             btnCol.append(UpdateMenues)

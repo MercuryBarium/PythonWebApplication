@@ -300,18 +300,18 @@ def updatemenu():
                 if len(menu) == 0:
                     ret['opcode'] = 'Empty menu'
                     return jsonify(ret)
-                day     = serverTime.weekdaterange(year, week)[day]
+                day     = weekdaterange(year, week)[day]
                 delta   = datetime.datetime.strptime(day, '%Y-%m-%d')
-                if int(datetime.datetime.today().strftime('%V')) < int(delta.strftime('%V')):
-                    if backend.updateMenu(year, week, day, menu):
-                        ret['opcode'] = 'success'
-                        return jsonify(ret)
-                    else:
-                        ret['opcode'] = 'Bounced'
-                        return jsonify(ret)
-                else:
-                    ret['opcode'] = 'Cannot update menues the same or after the week they are due'
+                #if int(datetime.datetime.today().strftime('%V')) < int(delta.strftime('%V')):
+                if backend.updateMenu(year, week, day, menu):
+                    ret['opcode'] = 'success'
                     return jsonify(ret)
+                else:
+                    ret['opcode'] = 'Bounced'
+                    return jsonify(ret)
+                #else:
+                 #   ret['opcode'] = 'Cannot update menues the same or after the week they are due'
+                  #  return jsonify(ret)
             else:
                 ret['opcode'] = 'Improper Input'
                 return jsonify(ret)
@@ -341,21 +341,21 @@ def updateorder():
         order   = jsonINPUT['order']
         if year and week and day and order:
             userID = backend.getUID(email)
-            if inTime(day=day):
-                todayYear, todayWeek = getCurrentWeekAndYear()
-                if todayYear == year and todayWeek == week:
-                    if backend.orderFOOD(userID, year, week, day, order):
-                        ret['opcode'] = 'Success'
-                        return jsonify(ret)
-                    else:
-                        ret['opcode'] = 'Error'
-                        return jsonify(ret)
+            #if inTime(day=day):
+            todayYear, todayWeek = getCurrentWeekAndYear()
+            if todayYear == year and todayWeek == week:
+                if backend.orderFOOD(userID, year, week, day, order):
+                    ret['opcode'] = 'Success'
+                    return jsonify(ret)
                 else:
-                    ret['opcode'] = 'Order must be due the same week'
+                    ret['opcode'] = 'Error'
                     return jsonify(ret)
             else:
-                ret['opcode'] = 'You are too late'
+                ret['opcode'] = 'Order must be due the same week'
                 return jsonify(ret)
+            #else:
+             #   ret['opcode'] = 'You are too late'
+              #  return jsonify(ret)
         else:
             ret['opcode'] = 'Improper input'
             return jsonify(ret)

@@ -14,6 +14,13 @@ import json
 #den så vill vi dela in menyerna i veckodagar precis som på sidan.
 dagar       = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag']
 
+def checkTypes(listOfVars):
+    for i in listOfVars:
+        var, t = i
+        if type(var) != t:
+            return False
+    return True
+
 #Funktionen nedan är en förkortning för att snabbt få fram tiden i form av text.
 def gettime():
     timestamp   = time()
@@ -460,42 +467,46 @@ class basicusermanager(emailerSSL):
             return None
 
     def orderFOOD(self, userid, year, week, day, order):
-        if type(year) == int and type(week) == int and type(day) == str and type(order) == list:
-            try:
-                self.cur.execute("SELECT menu FROM menues WHERE year = %i AND weeknumber = %i AND day = '%s';" % (year, week, day))
-            except Exception as e:
-                print(e)
-                self.errorlog.write('\n\n%s: %s' % (gettime(), e))
-                return False
-            data = self.cur.fetchone()['menu']
-            if data:
-                menu    = json.loads(data)
-                for o in order:
-                    if not type(o['item']) == int and not type(o['amount']) == int:
-                        return False
-                        if not o['item'] >= 0 and not o['item'] < len(data['menu']):
-                            return False
-                            if not o['amount'] > 0:
-                                return False
-                
-                payload = "SELECT COUNT(*) FROM orders WHERE userid = %i AND year = %i AND weeknumber = %i AND day = '%s';" % (userid, year, week, day)
-                self.cur.execute(payload)
-                
-                data = self.cur.fetchone()
-                if data['COUNT(*)'] > 0:
-                    self.cur.execute('UPDATE orders SET foodorder = "%s" WHERE userid = %i AND year = %i AND weeknumber = %i AND date = "%s";')
-                    return True
-                else:
-                    print('INSERT INTO orders VALUES (%i, %i, %i, "%s", "%s");' % (userid, year, week, day, order))
-                    self.cur.execute('INSERT INTO orders VALUES (%i, %i, %i, "%s", "%s");' % (userid, year, week, day, order))
-                    return True
+        check = [
+            (userid, int),
+            (year, int),
+            (week, int),
+            (day, str),
+            (order, list)
+        ]
+        if checkTypes(check):
+            self.cur.execute('SELECT COUNT(*) FROM orders WHERE userid=%i AND year=%i AND weeknumber=%i AND day="%s";' % (userid,year,week,day))
+            orderexists = False
+            if self.cur.fetchone()['COUNT(*)'] > 0: orderexists = True
+            
+            self.cur.execute('SELECT menu FROM menues WHERE year=%i AND weeknumber=%i AND day="%s";' % (year, week, day))
+            menu = self.cur.fetchone()['menu']
 
-        else:
-            print('year:  ' + str(type(year)))
-            print('week:  ' + str(type(week)))
-            print('day:   ' + str(type(day)))
-            print('order: ' + str(type(order)))
-            return False
+            if menu:
+                if len(order) <= len(menu):
+                    for o in order:
+                        if o['amount'] < 1: return False
+                        if menu[o['item']] == None: return False
+
+                    if orderexists:
+                        self.cur.execute("UPDATE orders SET foodorder='%s' WHERE userid=%i AND year=%i AND weeknumber=%i AND day='%s';" % (
+                            json.dumps(order),
+                            userid,
+                            year,
+                            week,
+                            day
+                        ))
+                        return True
+                    else:
+                        self.cur.execute("INSERT INTO orders VALUES (%i, %i, %i, '%s', '%s');" % (
+                            userid, 
+                            year,
+                            week,
+                            day,
+                            json.dumps(order)
+                        ))
+                        return True
+        return False
 
 
 
