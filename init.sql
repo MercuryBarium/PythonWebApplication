@@ -1,5 +1,5 @@
 
-CREATE USER "pythonhttp"@"localhost" IDENTIFIED BY 'qwerty123'
+CREATE USER "pythonhttp"@"localhost" IDENTIFIED BY 'qwerty123';
 
 CREATE DATABASE matlista CHARACTER SET = "utf8mb4";
 
