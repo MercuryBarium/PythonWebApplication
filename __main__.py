@@ -1,8 +1,7 @@
-from flask import Flask, request, redirect, make_response, jsonify
+from flask import Flask, request, redirect, make_response, jsonify, render_template
 from model.matlista import basicusermanager, vecka
 from model.matlista import getCurrentWeekAndYear, skipAhead, weekdaterange, inTime
 from model.infogathering.webscraper import scrape
-from public.view import get_html
 from base64 import b64decode
 import datetime, json
 
@@ -50,22 +49,38 @@ def retAUTHCODE(authcookie) -> tuple:
 def index():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     if code == 0 or code == 1:
-        return get_html('dashboard')
+        return redirect('/dashboard')
     else:
-        return get_html('index')
+        return render_template('index.html')
+
+@app.route('/dashboard', methods=['GET'])
+def dashboard():
+    email, code = retAUTHCODE(request.cookies.get('loginsession'))
+    if code == 0 or code == 1:
+        return render_template('dashboard.html')
+    else:
+        return redirect('/index')
+@app.route('/dashboard/<url>')
+def subboard(url=None):
+    email, code = retAUTHCODE(request.cookies.get('loginsession'))
+    if code == 0 or code == 1:
+        try: 
+            return render_template(url)
+        except:
+            return render_template('404.html')
 
 @app.route('/forgotpassword', methods=['GET'])
 def forgotpassword():
     email   = request.args.get('email')
 
     if email:
-        return get_html('newpassword')
+        return render_template('newpassword.html')
     else:
-        return get_html('forgotpassword')
+        return render_template('forgotpassword.html')
 
 @app.route('/verifyuser', methods=['GET'])
 def verifyuser():
-    return get_html('verificationpage')
+    return render_template('verificationpage.html')
 
 @app.route('/logout', methods=['GET'])
 def logout():
@@ -135,7 +150,7 @@ def resettoken():
     if email and backend.checkuserexists(email):
         token, created = backend.makepasswordresettoken(email)
         if created:
-            backend.sendmail(email, 'Food Truck: Password reset token', get_html('emailtemplate') % ('Password reset token:', token))
+            backend.sendmail(email, 'Food Truck: Password reset token', render_template('emailtemplate.html') % ('Password reset token:', token))
             return redirect('/forgotpassword?email=%s' % email)
         else:
             return '<h1>Internal Server Error</h1>'
@@ -172,7 +187,7 @@ def signup():
         if password == confirmation:
             code, token = backend.CreateNewUser(email, name, password)
             if code == 1:
-                backend.sendmail(email, 'Food Truck: Verification Token', get_html('emailtemplate') % ('Verification Token', token))
+                backend.sendmail(email, 'Food Truck: Verification Token', render_template('emailtemplate.html') % ('Verification Token', token))
                 return redirect('/verifyuser?email=%s' % email)
             elif code == 2:
                 return redirect('/index?signuperror=Email-address-is-already-in-use')
