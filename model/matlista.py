@@ -24,7 +24,7 @@ def checkTypes(listOfVars):
 #Funktionen nedan är en förkortning för att snabbt få fram tiden i form av text.
 def gettime():
     timestamp   = time()
-    t           = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+    t           = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
     return t
 
 #När vi har delat upp html-innhehållet i veckodagar sätter vi in resterande html

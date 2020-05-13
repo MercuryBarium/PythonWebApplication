@@ -60,14 +60,26 @@ def dashboard():
         return render_template('dashboard.html')
     else:
         return redirect('/index')
+
 @app.route('/dashboard/<url>')
 def subboard(url=None):
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     if code == 0 or code == 1:
         try: 
-            return render_template(url)
+            return render_template('app/%s' % url)
         except:
             return render_template('404.html')
+
+@app.route('/admin/<url>')
+def admin(url=None):
+    email, code = retAUTHCODE(request.cookies.get('loginsession'))
+    if code == 1:
+        try:
+            return render_template('admin/%s' % url)
+        except:
+            return render_template('404.html')
+    else:
+        return redirect('/index')
 
 @app.route('/forgotpassword', methods=['GET'])
 def forgotpassword():
@@ -220,11 +232,7 @@ def verify():
 def auth():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     ret     = {'code':code, 'msg':AUTHCODES[code]}
-    if code == 0 or code == 1:
-        ret['orders']   = backend.getOrders(email)
-        return jsonify(ret)
-    else:
-        return jsonify(ret)
+    return jsonify(ret)
 
 @app.route('/makeadmin', methods=['POST'])
 def makeadmin():
