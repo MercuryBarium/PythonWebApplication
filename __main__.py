@@ -57,7 +57,7 @@ def index():
 def dashboard():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     if code == 0 or code == 1:
-        return render_template('dashboard.html')
+        return redirect('/dashboard/orderfood.html')
     else:
         return redirect('/index')
 

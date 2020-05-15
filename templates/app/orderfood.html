@@ -19,6 +19,10 @@
             </ul>
         </div>
     </nav>
+    <nav class="nav" id="mainNav">
+        <a class="nav-link disabled" href="/dashboard/orderfood.html">Order Food</a>
+        <a class="nav-link active" href="/dashboard/myorders.html">My Orders</a>
+    </nav>
     <h1>Hello World</h1>
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
         integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
@@ -29,6 +33,32 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
         integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
         crossorigin="anonymous"></script>
+    
+    <script>
+        function retLink(name, link) {
+            var ret = document.createElement("a")
+            ret.className = "nav-link active"
+            ret.href = link
+            ret.innerText = name
+            return ret
+        }
+        async function isAdmin(){
+            const rawResponse = await fetch("/auth", {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                }
+            })
+            const clean = await rawResponse.json()
+            if (clean["code"] == 1) {
+                $("#mainNav").append(retLink("Edit Menues", "/admin/editmenues.html"))
+                $("#mainNav").append(retLink("View Orders", "/admin/vieworders,html"))
+
+            }
+        }
+        isAdmin()
+    </script>
 </body>
 
 </html>
