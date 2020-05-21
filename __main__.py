@@ -1,7 +1,6 @@
 from flask import Flask, request, redirect, make_response, jsonify, render_template
 from model.matlista import basicusermanager, vecka
 from model.matlista import getCurrentWeekAndYear, skipAhead, weekdaterange, inTime
-from model.infogathering.webscraper import scrape
 from base64 import b64decode
 import datetime, json
 
@@ -388,4 +387,4 @@ def updateorder():
 
 #============================================
 
-app.run(debug=True, host='0.0.0.0', port=8089, ssl_context=('./SSL/certificate.pem', './SSL/key.pem'))
+app.run(debug=True, host='0.0.0.0', port=8089)
