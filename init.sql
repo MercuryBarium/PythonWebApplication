@@ -26,6 +26,6 @@ GRANT UPDATE, INSERT, SELECT ON users TO pythonhttp@localhost;
 GRANT INSERT, SELECT, DELETE ON vertokens TO pythonhttp@localhost;
 GRANT INSERT, SELECT, DELETE ON loginsessions TO pythonhttp@localhost;
 GRANT INSERT, SELECT, DELETE ON passwordreset TO pythonhttp@localhost;
-GRANT INSERT, SELECT, UPDATE ON menues TO pythonhttp@localhost;
+GRANT INSERT, SELECT, UPDATE, DELETE ON menues TO pythonhttp@localhost;
 GRANT INSERT, SELECT, DELETE ON admintokens TO pythonhttp@localhost;
 GRANT UPDATE, INSERT, SELECT, DELETE ON orders TO pythonhttp@localhost;
