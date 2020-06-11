@@ -36,15 +36,17 @@ async function placeOrder(orderindex) {
 
     for (let i = 1; i < inputs.length; i++) {
         food = i - 1
+        
         quant = parseInt(inputs[i].value)
         if (quant > 0) {
-            payload.order[food] = { item: food, amount: quant }
+            payload.order.push({ item: food, amount: quant })
             confirm += labels[food].innerText + ': ' + quant + '\n\n'
         }
     }
     console.log(payload.order[0])
     if (payload.order.length > 0) {
         if (window.confirm(confirm)) {
+            console.log(payload)
             $('#msg' + orderindex).html('')
             $('#msg' + orderindex).append(spinner())
             const rawResponse = await fetch('/updateorder', {
@@ -66,11 +68,11 @@ async function placeOrder(orderindex) {
             }
         } 
     } else {
-        
+        return
     }
 }
 
-
+incweeks = 0
 async function getMenues() {
     const fetchData = await fetch('/fetchmenues', {
         method: 'POST',
@@ -78,7 +80,7 @@ async function getMenues() {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ week: 0 })
+        body: JSON.stringify({ week: incweeks })
     }).catch(err => {
         getMenues()
         return

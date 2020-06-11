@@ -172,7 +172,6 @@ class emailerSSL:
 db_config = json.loads(open('./DATABASE_CONFIG.json').read())
 
 
-
 def db_conn():
     return pymysql.connect(
         host=db_config['host'],
@@ -534,8 +533,7 @@ class basicusermanager(emailerSSL):
                 if thisCursor.fetchone()['COUNT(*)'] > 0:
                     orderexists = True
 
-                thisCursor.execute(
-                    'SELECT menu FROM menues WHERE year=%i AND weeknumber=%i AND day="%s";' % (year, week, day))
+                thisCursor.execute('SELECT menu FROM menues WHERE year=%i AND weeknumber=%i AND day="%s";' % (year, week, day))
                 menu = thisCursor.fetchone()['menu']
 
                 if menu:

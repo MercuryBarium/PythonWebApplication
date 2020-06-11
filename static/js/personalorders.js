@@ -3,6 +3,7 @@ var endDate = document.getElementById('dateTo')
 
 var now = new Date(Date.now())
 
+var days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
 
 function formatDate(date){
     year = date.getFullYear()
@@ -60,7 +61,10 @@ function genOrderCol(order) {
     var row_1 = document.createElement('div')
     row_1.className = 'col'
     var name = document.createElement('h4')
-    name.innerText = order['day']
+
+    var dayname = new Date(order['day'])
+
+    name.innerText = days[dayname.getDay()] 
     row_1.append(name)
     thisCol.append(row_1)
 

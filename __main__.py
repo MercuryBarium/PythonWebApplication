@@ -358,6 +358,7 @@ def updateorder():
             return jsonify(ret)
         
         order   = jsonINPUT['order']
+        print(order)
         if year and week and day and order:
             userID = backend.getUID(email)
             #if inTime(day=day):
@@ -436,9 +437,30 @@ def fetchorder():
                     startDate += datetime.timedelta(days=1)
     return jsonify(ret)
             
+@app.route('/dailyreport', methods=['GET'])
+def dailyreport():
+    email, code = retAUTHCODE(request.cookies.get('loginsession'))
+    ret = {'code': code, 'msg': AUTHCODES[code]}
+    if code == 1:
+        with db_conn() as conn:
+            today = datetime.datetime.today().date()
+            ret['orders'] = []
+            conn.execute('SELECT menu FROM menues WHERE day="%s";' % (today.isoformat()))
+            if conn.rowcount > 0:
+                menus = json.loads(conn.fetchone()['menu'])
+                for m in menus:
+                    m = b64decode(m.encode('utf-8')).decode('utf-8')
+                    ret['orders'].append({'food': m, 'amount': 0})
 
-                
-                    
+                conn.execute('SELECT foodorder FROM orders WHERE day="%s";' % (today.isoformat()))
+                if conn.rowcount > 0:
+                    individualOrders = conn.fetchall()
+                    for i in individualOrders:
+                        i = json.loads(i['foodorder'])
+                        for o in i:
+                            ret['orders'][o['item']]['amount'] += o['amount']
+            
+    return jsonify(ret)
 
 #============================================
 
