@@ -28,19 +28,22 @@
 
     
 
-    <form class="form-inline border-top border-bottom">
-        <div class="form-group mx-sm-3 mb-2">
-            <label for="dateFrom">From  </label>
-            <input type="date" name="dateFrom" class="form-control" id="dateFrom">
+    <div class="row border border-top border-bottom">
+        <form class="col form-inline">
+            <div class="form-group mx-sm-3 mb-2">
+                <label for="dateFrom">From  </label>
+                <input type="date" name="dateFrom" class="form-control" id="dateFrom">
+            </div>
+            <div class="form-group mx-sm-3 mb-2">
+                <label for="dateTo">To  </label>
+                <input type="date" name="dateTo" class="form-control" id="dateTo">
+            </div>
+            
+        </form>
+        <div class="col">
+            <button class="btn btn-primary mb-2" id="filterButton">Filter</button>
         </div>
-        <div class="form-group mx-sm-3 mb-2">
-            <label for="dateTo">To  </label>
-            <input type="date" name="dateTo" class="form-control" id="dateTo">
-        </div>
-        
-    </form>
-    <button class="btn btn-primary mb-2" id="filterButton">Filter</button>
-    
+    </div>
     <div class="container" id="pageCONTENT">
         
     </div>

@@ -16,8 +16,8 @@ async function isAdmin(){
     const clean = await rawResponse.json()
     if (clean["code"] == 1) {
         $("#mainNav").append(retLink("Edit Menues", "/admin/editmenues.html"))
-        $("#mainNav").append(retLink("View Orders", "/admin/vieworders.html"))
-
+        $("#mainNav").append(retLink("Daily Report", "/admin/dailyreport.html"))
+        $("#mainNav").append(retLink("Individual Reports", "/admin/individualreports.html"))
     }
 }
 isAdmin()

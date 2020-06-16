@@ -5,6 +5,7 @@ from base64 import b64decode
 import pymysql
 import pymysql.cursors
 import datetime, json
+import flask
 
 config = open('./email.txt', 'r').readlines()
 
@@ -321,16 +322,16 @@ def updatemenu():
                         return jsonify(ret)
                     day     = weekdaterange(year, week)[day]
                     delta   = datetime.datetime.strptime(day, '%Y-%m-%d')
-                    #if int(datetime.datetime.today().strftime('%V')) < int(delta.strftime('%V')):
-                    if backend.updateMenu(year, week, day, menu):
-                        ret['opcode'] = 'success'
-                        return jsonify(ret)
+                    if int(datetime.datetime.today().strftime('%V')) < int(delta.strftime('%V')):
+                        if backend.updateMenu(year, week, day, menu):
+                            ret['opcode'] = 'success'
+                            return jsonify(ret)
+                        else:
+                            ret['opcode'] = 'Bounced'
+                            return jsonify(ret)
                     else:
-                        ret['opcode'] = 'Bounced'
+                        ret['opcode'] = 'Cannot update menues the same or after the week they are due'
                         return jsonify(ret)
-                    #else:
-                    #   ret['opcode'] = 'Cannot update menues the same or after the week they are due'
-                    #  return jsonify(ret)
                 else:
                     ret['opcode'] = 'Improper Input'
                     return jsonify(ret)
@@ -361,21 +362,21 @@ def updateorder():
         print(order)
         if year and week and day and order:
             userID = backend.getUID(email)
-            #if inTime(day=day):
-            todayYear, todayWeek = getCurrentWeekAndYear()
-            if todayYear == year and todayWeek == week:
-                if backend.orderFOOD(userID, year, week, day, order):
-                    ret['opcode'] = 'Success'
-                    return jsonify(ret)
+            if inTime(day=day):
+                todayYear, todayWeek = getCurrentWeekAndYear()
+                if todayYear == year and todayWeek == week:
+                    if backend.orderFOOD(userID, year, week, day, order):
+                        ret['opcode'] = 'Success'
+                        return jsonify(ret)
+                    else:
+                        ret['opcode'] = 'Error'
+                        return jsonify(ret)
                 else:
-                    ret['opcode'] = 'Error'
+                    ret['opcode'] = 'Order must be due the same week'
                     return jsonify(ret)
             else:
-                ret['opcode'] = 'Order must be due the same week'
+                ret['opcode'] = 'You are too late'
                 return jsonify(ret)
-            #else:
-             #   ret['opcode'] = 'You are too late'
-              #  return jsonify(ret)
         else:
             ret['opcode'] = 'Improper input'
             return jsonify(ret)
@@ -391,15 +392,18 @@ def removemenu():
     year, week  = skipAhead(int(data['weekskip']))
     date    = str(weekdaterange(year, week)[int(data['day'])])
     ret     = {'code':code}
+
+    yearnow, weeknow = getCurrentWeekAndYear()
     if (code == 1):
         with db_conn().cursor() as conn:
             thisCursor = conn
-            try:
-                thisCursor.execute('DELETE FROM menues WHERE year=%i AND weeknumber=%i AND day="%s";' % (year, week, date))
-                ret['msg']  = 'success'
-            except Exception as e:
-                backend.logError(e)
-                ret['msg']  = '500'
+            if yearnow <= yearnow and weeknow < week:
+                try:
+                    thisCursor.execute('DELETE FROM menues WHERE year=%i AND weeknumber=%i AND day="%s";' % (year, week, date))
+                    ret['msg']  = 'success'
+                except Exception as e:
+                    backend.logError(e)
+                    ret['msg']  = '500'
     else:
         ret['msg']  = 'Illegal action'
     
@@ -460,6 +464,40 @@ def dailyreport():
                         for o in i:
                             ret['orders'][o['item']]['amount'] += o['amount']
             
+    return jsonify(ret)
+
+
+@app.route('/individualreports', methods=['POST'])
+def individualreports():
+    email, code = retAUTHCODE(request.cookies.get('loginsession'))
+    ret = {'code': code, 'msg': AUTHCODES[code], 'individuals': []}
+    if code == 1:
+        data = request.get_json()
+        date_from = datetime.datetime.strptime(data['date_from'], '%Y-%m-%d')
+        date_end = datetime.datetime.strptime(data['date_end'], '%Y-%m-%d')
+        with db_conn() as conn:
+            conn.execute('SELECT userid, name FROM users WHERE 1=1;')
+            if conn.rowcount > 0:
+                users = conn.fetchall()
+                for u in users:
+                    total_units_ordered = 0
+                    username = b64decode(u['name'].encode('utf-8')).decode('utf-8')
+                    u_id = u['userid']
+
+                    select_date = date_from
+                    while select_date <= date_end:
+                        conn.execute('SELECT foodorder FROM orders WHERE userid=%i AND day="%s";' % (u_id, select_date.date()))
+                        if conn.rowcount > 0:
+                            d = json.loads(conn.fetchone()['foodorder'])
+                            for o in d:
+                                total_units_ordered += o['amount']
+                        
+                        select_date += datetime.timedelta(days=1)
+                    
+                    ret['individuals'].append({
+                        'name': username,
+                        'total': total_units_ordered
+                    })
     return jsonify(ret)
 
 #============================================

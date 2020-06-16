@@ -23,13 +23,8 @@
         <a class="nav-link active" href="/dashboard/orderfood.html">Order Food</a>
         <a class="nav-link active" href="/dashboard/myorders.html">My Orders</a>
         <a class="nav-link active" href="/admin/editmenues.html">Edit Menues</a>
-        <a class="nav-link disabled" href="/admin/vieworders.html">View Orders</a>
-    </nav>
-
-    <nav class="nav border-top border-bottom">
-        <a href="#" class="nav-link" id="daily">Daily Orders</a>
-        <a class="nav-link" id="individuals">Individual Reports</a>
-        <a class="nav-link" id="detailed_reports">Detailed Reports</a>
+        <a class="nav-link disabled" href="/admin/vieworders.html">Daily Report</a>
+        <a class="nav-link" id="individuals" href="/admin/individualreports.html">Individual Reports</a>
     </nav>
     <div class="container" id="pageCONTENT">
         
@@ -43,6 +38,8 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
         integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
         crossorigin="anonymous"></script>
+    <script src="{{url_for('static', filename='js/common.js')}}"></script>
+    <script src="{{url_for('static', filename='js/daily.js')}}"></script>
 </body>
 
 </html>
