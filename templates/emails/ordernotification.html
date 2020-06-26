@@ -1,0 +1,16 @@
+<body>
+    <table>
+        <thead>
+            <th>Food</th>
+            <th>Amount</th>
+        </thead>
+        <tbody>
+            {% for o in orders %}
+                <tr>
+                    <td>{{ o['food'] }}</td>
+                    <td>{{ o['amount'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>

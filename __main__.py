@@ -1,21 +1,24 @@
-from flask import Flask, request, redirect, make_response, jsonify, render_template
-from model.matlista import basicusermanager, vecka, db_conn
-from model.matlista import getCurrentWeekAndYear, skipAhead, weekdaterange, inTime
+from flask import request, redirect, make_response, jsonify, render_template, render_template_string
+from model.matlista import basicusermanager, vecka, db_conn, getCurrentWeekAndYear, skipAhead, weekdaterange, inTime, send_mail
 from base64 import b64decode
 import pymysql
 import pymysql.cursors
-import datetime, json
-import flask
+import datetime, json, threading, time
+
 
 config = open('./email.txt', 'r').readlines()
 
 email       = config[0]
 password    = config[1]
 
-backend = basicusermanager('localhost', 'pythonhttp', 'qwerty123', 'matlista', email, password)
+backend = basicusermanager()
 
 
-app = Flask(__name__)
+
+
+
+
+
 
 AUTHCODES   = [
     'User is authenticated',
@@ -44,10 +47,10 @@ def retAUTHCODE(authcookie) -> tuple:
         return 'None', 4
 
 
-@app.route('/')
+@backend.route('/')
 
 #===============GET=HANDLERS=================
-@app.route('/index', methods=['GET'])
+@backend.route('/index', methods=['GET'])
 def index():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     if code == 0 or code == 1:
@@ -55,7 +58,7 @@ def index():
     else:
         return render_template('index.html')
 
-@app.route('/dashboard', methods=['GET'])
+@backend.route('/dashboard', methods=['GET'])
 def dashboard():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     if code == 0 or code == 1:
@@ -63,7 +66,7 @@ def dashboard():
     else:
         return redirect('/index')
 
-@app.route('/dashboard/<url>')
+@backend.route('/dashboard/<url>')
 def subboard(url=None):
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     if code == 0 or code == 1:
@@ -74,7 +77,7 @@ def subboard(url=None):
     else:
         return redirect('/index')
 
-@app.route('/admin/<url>')
+@backend.route('/admin/<url>')
 def admin(url=None):
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     if code == 1:
@@ -85,7 +88,7 @@ def admin(url=None):
     else:
         return redirect('/index')
 
-@app.route('/forgotpassword', methods=['GET'])
+@backend.route('/forgotpassword', methods=['GET'])
 def forgotpassword():
     email   = request.args.get('email')
 
@@ -94,11 +97,11 @@ def forgotpassword():
     else:
         return render_template('forgotpassword.html')
 
-@app.route('/verifyuser', methods=['GET'])
+@backend.route('/verifyuser', methods=['GET'])
 def verifyuser():
     return render_template('verificationpage.html')
 
-@app.route('/logout', methods=['GET'])
+@backend.route('/logout', methods=['GET'])
 def logout():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     if code == 0 or code == 1:
@@ -111,7 +114,7 @@ def logout():
 
 
 #===============POST=HANDLERS================
-@app.route('/signin', methods=['POST'])
+@backend.route('/signin', methods=['POST'])
 def signin():
     email   = request.form.get('email')
     password= request.form.get('password')
@@ -160,20 +163,20 @@ def signin():
         else:
             return redirect('/index?signinerror=Fill-out-both-fields')
 
-@app.route('/resettoken', methods=['POST'])
+@backend.route('/resettoken', methods=['POST'])
 def resettoken():
     email   = request.form.get('email')
     if email and backend.checkuserexists(email):
         token, created = backend.makepasswordresettoken(email)
         if created:
-            backend.sendmail(email, 'Food Truck: Password reset token', render_template('emailtemplate.html') % ('Password reset token:', token))
+            send_mail(email, 'Food Truck: Password reset token', render_template('emailtemplate.html') % ('Password reset token:', token))
             return redirect('/forgotpassword?email=%s' % email)
         else:
             return '<h1>Internal Server Error</h1>'
     else:
         return redirect('/forgotpassword?tokenerror=Invalid-email')
     
-@app.route('/resetpassword', methods=['POST'])
+@backend.route('/resetpassword', methods=['POST'])
 def resetpassword():
     email       = request.form.get('email')
     password    = request.form.get('password')
@@ -193,7 +196,7 @@ def resetpassword():
     else:
         return redirect('/forgotpassword?email=%s&reseterror=All-fields-must-be-filled-out' % email)
 
-@app.route('/signup', methods=['POST'])
+@backend.route('/signup', methods=['POST'])
 def signup():
     email       = request.form.get('email')
     name        = request.form.get('name')
@@ -203,7 +206,7 @@ def signup():
         if password == confirmation:
             code, token = backend.CreateNewUser(email, name, password)
             if code == 1:
-                backend.sendmail(email, 'Food Truck: Verification Token', render_template('emailtemplate.html') % ('Verification Token', token))
+                send_mail(email, 'Food Truck: Verification Token', render_template('emailtemplate.html') % ('Verification Token', token))
                 return redirect('/verifyuser?email=%s' % email)
             elif code == 2:
                 return redirect('/index?signuperror=Email-address-is-already-in-use')
@@ -216,7 +219,7 @@ def signup():
     else:
         return redirect('/index?signuperror=All-fields-needs-to-be-filled-out')
 
-@app.route('/verify', methods=['POST'])
+@backend.route('/verify', methods=['POST'])
 def verify():
     email   = request.form.get('email')
     token   = request.form.get('token')
@@ -232,13 +235,13 @@ def verify():
         return redirect('/verifyuser?verificationerror=No-email-specified')
 
 #application/json
-@app.route('/auth', methods=['POST'])
+@backend.route('/auth', methods=['POST'])
 def auth():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     ret     = {'code':code, 'msg':AUTHCODES[code]}
     return jsonify(ret)
 
-@app.route('/makeadmin', methods=['POST'])
+@backend.route('/makeadmin', methods=['POST'])
 def makeadmin():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     ret     = {'code':code, 'msg':AUTHCODES[code]}
@@ -259,7 +262,7 @@ def makeadmin():
         return jsonify(ret)
 
 
-@app.route('/fetchmenues', methods=['POST'])
+@backend.route('/fetchmenues', methods=['POST'])
 def fetchmenus():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     ret     = {'code': code, 'msg': AUTHCODES[code]}
@@ -302,7 +305,7 @@ def fetchmenus():
         ret['opcode']   = 'Improper input'
         return jsonify(ret)
 
-@app.route('/updatemenu', methods=['POST'])
+@backend.route('/updatemenu', methods=['POST'])
 def updatemenu():
     email, code     = retAUTHCODE(request.cookies.get('loginsession'))
     jsonDATA        = request.get_json()
@@ -342,7 +345,7 @@ def updatemenu():
         ret['opcode'] = 'Illegal'
         return jsonify(ret)
 
-@app.route('/updateorder', methods=['POST'])
+@backend.route('/updateorder', methods=['POST'])
 def updateorder():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     ret = {'code': code, 'msg': AUTHCODES[code]}
@@ -385,7 +388,7 @@ def updateorder():
         return jsonify(ret)
 
 
-@app.route('/removemenu', methods=['POST'])
+@backend.route('/removemenu', methods=['POST'])
 def removemenu(): 
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     data    = request.get_json()
@@ -410,7 +413,7 @@ def removemenu():
     return jsonify(ret)
 
 
-@app.route('/fetchorder', methods=['POST'])
+@backend.route('/fetchorder', methods=['POST'])
 def fetchorder():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     data = request.get_json()
@@ -441,7 +444,7 @@ def fetchorder():
                     startDate += datetime.timedelta(days=1)
     return jsonify(ret)
             
-@app.route('/dailyreport', methods=['GET'])
+@backend.route('/dailyreport', methods=['GET'])
 def dailyreport():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     ret = {'code': code, 'msg': AUTHCODES[code]}
@@ -467,7 +470,7 @@ def dailyreport():
     return jsonify(ret)
 
 
-@app.route('/individualreports', methods=['POST'])
+@backend.route('/individualreports', methods=['POST'])
 def individualreports():
     email, code = retAUTHCODE(request.cookies.get('loginsession'))
     ret = {'code': code, 'msg': AUTHCODES[code], 'individuals': []}
@@ -502,4 +505,4 @@ def individualreports():
 
 #============================================
 
-app.run(debug=True, host='0.0.0.0', port=8089)
+backend.run(debug=True, host='0.0.0.0', port=8089)

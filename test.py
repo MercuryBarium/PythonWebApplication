@@ -1,37 +1,36 @@
-import pymysql, pymysql.cursors
-import time
-
+import smtplib, json, time
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 now = time.time()
-connection = pymysql.connect(
-    'localhost',
-    'pythonhttp',
-    'qwerty123',
-    'matlista',
-    charset='utf8mb4',
-    cursorclass=pymysql.cursors.DictCursor,
-    autocommit=True)
 
-thisCursor = connection.cursor()
+email_config = json.loads(open('./EMAIL_CONFIG.json').read())
 
-connection2 = pymysql.connect(
-    'localhost',
-    'pythonhttp',
-    'qwerty123',
-    'matlista',
-    charset='utf8mb4',
-    cursorclass=pymysql.cursors.DictCursor,
-    autocommit=True)
+emails = [
+    {
+        'recip': 'marcus.brulls@gmail.com',
+        'sub': 'Yeet',
+        'cont': '<h1>Yaas queen succ my peen'
+    },
+    {
+        'recip': 'vebbe90@gmail.com',
+        'sub': 'Yeet',
+        'cont': '<h1>Yaas queen succ my peen'
+    }
+]
 
-thisCursor2 = connection.cursor()
+def send_mail(recipient, subject, content):
+    with smtplib.SMTP_SSL(email_config['host'], 465) as server:
+        server.login(email_config['email'], email_config['password'])
 
-print(connection.)
+        mail = MIMEMultipart('alternative')
+        mail['Subject'] = subject
+        mail['From'] = email_config['email']
+        mail['To'] = recipient
 
-thisCursor.close()
-connection.close()
+        mail.attach(MIMEText(content, 'html'))
 
-thisCursor2.close()
-connection2.close()
-later = time.time()
+        server.sendmail(email_config['email'], recipient, mail.as_string())
 
-print('operation took : %f seconds' % (later-now))
+
+print(time.time() - now)

@@ -94,7 +94,8 @@ function genOrderCol(order) {
 }
 
 async function renderOrders() {
-
+    $('#pageCONTENT').html('')
+    $('#pageCONTENT').append(spinner())
     const rawResponse = await fetch('/fetchorder', {
         method: 'POST', 
         headers: {
@@ -107,6 +108,7 @@ async function renderOrders() {
     const cleanResponse = await rawResponse.json()
     const fetchedOrders = cleanResponse['orders']
     console.log(cleanResponse)
+    $('#pageCONTENT').html('')
 
     for (let i = fetchedOrders.length-1; i >= 0; i--) {
         var year = fetchedOrders[i]['year']

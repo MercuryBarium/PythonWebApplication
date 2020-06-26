@@ -12,6 +12,7 @@ from time import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import json
+from flask import Flask, render_template
 
 # Glada kocken är en svensk sida, och när vi skrapar innehållet ifrån
 # den så vill vi dela in menyerna i veckodagar precis som på sidan.
@@ -106,71 +107,22 @@ class user_class:
         self.password = password
         self.verified = verified
 
-# Nedanstående mejl-klass använder SMTP (Simple Mail Transfer Protocol) för att ansluta till en mail server
-# sända ut mejl till användare. Den användes tillsammans med en lokal mejlserver endast för prövning.
 
+db_config = json.loads(open('./DATABASE_CONFIG.json').read())
+email_config = json.loads(open('./EMAIL_CONFIG.json').read())
 
-class emailer:
-    def __init__(self, serveremail):
-        self.emailuser = serveremail
-        self.errorlog = open('errorlog.txt', 'a')
-        try:
-            self.emailserver = smtplib.SMTP('localhost')
+def send_mail(recipient, subject, content):
+    with smtplib.SMTP_SSL(email_config['host'], 465) as server:
+        server.login(email_config['email'], email_config['password'])
 
-        except Exception as e:
-            print(e)
-            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
-            exit()
-
-    def sendmail(self, recpient, subject, content):
-        mail = 'From: From Person <{}>'.format(self.emailuser)
-        mail += '\nTo: To Person <{}>'.format(recpient)
-        mail += '\nMIME-Version: 1.0\nContent-type: text/html'
-        mail += '\nSubject: {}\n\n{}'.format(subject, content)
-        try:
-            self.emailserver.sendmail(self.emailuser, recpient, mail)
-            return True
-
-        except Exception as e:
-            print(e)
-            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
-            return False
-
-# Ovanstående klass (emailer) blev tillslut ersatt av nedanstående klass (emailerSSL) som används nu.
-
-
-class emailerSSL:
-    def __init__(self, email, password):
-        self.email = email
-        self.password = password
-        # Eftersom vi vill kunna logga fel som inträffar i försändelsen av mejl öppnas därför errorlog.txt i den här klassen
-        # som sedan ärvs av klassen "basicusermanager".
-        self.errorlog = open('errorlog.txt', 'a')
-        self.emailserver = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-        self.emailserver.login(email, password)
-
-    def logError(self, error):
-        self.errorlog.write('\n\n{}: {}'.format(gettime(), error))
-
-    def sendmail(self, recipient, subject, content):
         mail = MIMEMultipart('alternative')
         mail['Subject'] = subject
-        mail['From'] = self.email
+        mail['From'] = email_config['email']
         mail['To'] = recipient
 
         mail.attach(MIMEText(content, 'html'))
 
-        try:
-            self.emailserver.login(self.email, self.password)
-            self.emailserver.sendmail(self.email, recipient, mail.as_string())
-            print('successfully sent mail')
-        except Exception as e:
-            print(e)
-            self.errorlog.write('\n\n{}: {}'.format(gettime(), e))
-
-
-db_config = json.loads(open('./DATABASE_CONFIG.json').read())
-
+        server.sendmail(email_config['email'], recipient, mail.as_string())
 
 def db_conn():
     return pymysql.connect(
@@ -184,9 +136,49 @@ def db_conn():
     )
 
 
-class basicusermanager(emailerSSL):
-    def __init__(self, host, user, password, db, serveremail, emailpassword):
-        super().__init__(serveremail, emailpassword)
+
+class basicusermanager(Flask):
+    def __init__(self):
+        super().__init__('__main__')
+        self.errorlog = open('errorlog.txt', 'a')
+    
+
+    def order_notify(self):
+        with self.app_context():
+            with db_conn() as conn:
+                today = datetime.datetime.now().date().isoformat()
+                conn.execute(
+                    'SELECT userid, email FROM users WHERE verified=1;')
+                if conn.rowcount > 0:
+                    q_ret = conn.fetchall()
+
+                    conn.execute(
+                        'SELECT menu FROM menues WHERE day="%s";' % (today))
+                    if conn.rowcount > 0:
+                        menu = json.loads(conn.fetchone()['menu'])
+
+                        for i in range(len(menu)):
+                            menu[i] = b64decode(
+                                menu[i].encode('utf-8')).decode('utf-8')
+
+                        for u in q_ret:
+                            email = b64decode(u['email'].encode(
+                                'utf-8')).decode('utf-8')
+                            u_id = u['userid']
+
+                            conn.execute(
+                                'SELECT foodorder FROM orders WHERE day="%s" AND userid=%i;' % (today, u_id))
+
+                            if conn.rowcount > 0:
+                                orders = []
+                                for o in json.loads(conn.fetchone()['foodorder']):
+                                    orders.append({
+                                        'food': menu[o['item']],
+                                        'amount': o['amount']
+                                    })
+
+                                send_mail(email, 'Order Notification', render_template(
+                                    'emails/ordernotification.html', orders=orders))
 
     # =======================================================================================
     # If function returns 1, an unverified user has been created with a verificationtoken added to the vertokens table.
@@ -611,3 +603,5 @@ def inTime(day):
         return True
     else:
         return False
+
+
