@@ -141,6 +141,14 @@ class basicusermanager(Flask):
     def __init__(self):
         super().__init__('__main__')
         self.errorlog = open('errorlog.txt', 'a')
+
+        self.AUTHCODES   = [
+            'User is authenticated',
+            'Admin is authenticated',
+            'Authentication failed',
+            'User does not exist',
+            'Improper auth cookie'
+        ]
     
 
     def order_notify(self):
@@ -555,6 +563,27 @@ class basicusermanager(Flask):
                             ))
                             return True
             return False
+
+    
+
+    def retAUTHCODE(self, authcookie) -> tuple:
+        if type(authcookie) == str and authcookie.count('|'):
+            authcookie  = authcookie.split('|')
+            email       = authcookie[0]
+            secret      = authcookie[1]
+            if self.checkuserexists(email):
+                if self.checkSession(email, secret):
+                    if self.isAdmin(email):
+                        return email, 1
+                    else:
+                        return email, 0
+                else:
+                    return email, 2
+            else:
+                return email, 3
+        else:
+            return 'None', 4
+
 
 
 def getCurrentWeekAndYear() -> tuple:

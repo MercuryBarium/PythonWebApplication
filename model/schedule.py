@@ -1,9 +1,10 @@
-from model.matlista import basicusermanager, db_conn, send_mail
+from model.api import api, db_conn, send_mail, render_template
+from flask import request
 import schedule, datetime, json
 from base64 import b64decode
-from flask import render_template
+import schedule
 
-class event_handler(basicusermanager):
+class event_handler(api):
     def __init__(self):
         super().__init__()
         self.methods = self.ret_event_methods()
@@ -11,12 +12,21 @@ class event_handler(basicusermanager):
         with db_conn().cursor() as conn:
             conn.execute('SELECT * FROM events;')
             if conn.rowcount == 0:
-                initial_events = json.loads(open('./EVENTS.json'))
-
+                initial_events = json.loads(open('./EVENTS.json').read())
+                for e in initial_events:
+                    conn.execute('INSERT INTO events VALUES ("%s", "%s", "%s", "%s", 1);' % (e['name'], e['method'], e['day'], e['time_of_execution']))
+        
+        
         @self.route('/event_handler', methods=['POST'])
         def handle_event():
-            pass
-    
+            return 'hello world'
+
+        @self.route('/get_events', methods=['GET'])
+        def get_events():
+            code = self.retAUTHCODE(request.cookies.get('loginsession'))[1]
+            if code == 1: 
+                with db_conn().cursor() as conn:
+                    pass                    
 
     def ret_event_methods(self):
         methods = [send_mail]

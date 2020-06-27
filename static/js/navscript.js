@@ -18,6 +18,7 @@ async function isAdmin(){
         $("#mainNav").append(retLink("Edit Menues", "/admin/editmenues.html"))
         $("#mainNav").append(retLink("Daily Report", "/admin/dailyreport.html"))
         $("#mainNav").append(retLink("Individual Reports", "/admin/individualreports.html"))
+        $("#mainNav").append(retLink("Settings", "/admin/appsettings.html"))
     }
 }
 isAdmin()
