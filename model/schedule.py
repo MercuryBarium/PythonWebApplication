@@ -1,8 +1,10 @@
-from model.api import api, db_conn, send_mail, render_template
+from model.api import api, db_conn, send_mail, render_template, jsonify
 from flask import request
 import schedule, datetime, json
 from base64 import b64decode
 import schedule
+
+
 
 class event_handler(api):
     def __init__(self):
@@ -14,7 +16,7 @@ class event_handler(api):
             if conn.rowcount == 0:
                 initial_events = json.loads(open('./EVENTS.json').read())
                 for e in initial_events:
-                    conn.execute('INSERT INTO events VALUES ("%s", "%s", "%s", "%s", 1);' % (e['name'], e['method'], e['day'], e['time_of_execution']))
+                    conn.execute('INSERT INTO events VALUES ("%s", "%s", "%s", "%s", true);' % (e['name'], e['method'], e['day'], e['time_of_execution']))
         
         
         @self.route('/event_handler', methods=['POST'])
@@ -24,9 +26,17 @@ class event_handler(api):
         @self.route('/get_events', methods=['GET'])
         def get_events():
             code = self.retAUTHCODE(request.cookies.get('loginsession'))[1]
+            ret = {'code': code, 'msg': self.AUTHCODES[code]}
             if code == 1: 
                 with db_conn().cursor() as conn:
-                    pass                    
+                    conn.execute('SELECT * FROM events;')
+                    ret['events'] = []
+
+                    if conn.rowcount > 0:
+                        for e in conn.fetchall():
+                            ret['events'].append(e)
+            
+            return jsonify(ret)
 
     def ret_event_methods(self):
         methods = [send_mail]

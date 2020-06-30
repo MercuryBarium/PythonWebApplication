@@ -4,5 +4,11 @@
         "method": "order_notify",
         "day": "any-any-any",
         "time_of_execution": "11:00"
+    },
+    {
+        "name": "Last orders",
+        "method": "None",
+        "day": "any-any-any",
+        "time_of_execution": "09:00"
     }
 ]
