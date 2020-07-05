@@ -6,7 +6,6 @@ class getters(event_handler):
         super().__init__()
 
         @self.route('/')
-
         #===============GET=HANDLERS=================
         @self.route('/index', methods=['GET'])
         def index():

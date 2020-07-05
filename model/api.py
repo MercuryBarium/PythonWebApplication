@@ -88,31 +88,30 @@ class api(basicusermanager):
 
             ret         = {'code': code, 'msg':  self.AUTHCODES[code]}
             if code == 1:
-                with db_conn().cursor() as conn:
-                    thisCursor = conn
-                    if type(year) == int and type(week) == int and type(day) == int:
-                        if 0 <= day <= 4:
-                            if len(menu) == 0:
-                                ret['opcode'] = 'Empty menu'
+                
+                if type(year) == int and type(week) == int and type(day) == int:
+                    if 0 <= day <= 4:
+                        if len(menu) == 0:
+                            ret['opcode'] = 'Empty menu'
+                            return jsonify(ret)
+                        day     = weekdaterange(year, week)[day]
+                        delta   = datetime.datetime.strptime(day, '%Y-%m-%d')
+                        if int(datetime.datetime.today().strftime('%V')) < int(delta.strftime('%V')):
+                            if self.updateMenu(year, week, day, menu):
+                                ret['opcode'] = 'success'
                                 return jsonify(ret)
-                            day     = weekdaterange(year, week)[day]
-                            delta   = datetime.datetime.strptime(day, '%Y-%m-%d')
-                            if int(datetime.datetime.today().strftime('%V')) < int(delta.strftime('%V')):
-                                if self.updateMenu(year, week, day, menu):
-                                    ret['opcode'] = 'success'
-                                    return jsonify(ret)
-                                else:
-                                    ret['opcode'] = 'Bounced'
-                                    return jsonify(ret)
                             else:
-                                ret['opcode'] = 'Cannot update menues the same or after the week they are due'
+                                ret['opcode'] = 'Bounced'
                                 return jsonify(ret)
                         else:
-                            ret['opcode'] = 'Improper Input'
+                            ret['opcode'] = 'Cannot update menues the same or after the week they are due'
                             return jsonify(ret)
                     else:
                         ret['opcode'] = 'Improper Input'
                         return jsonify(ret)
+                else:
+                    ret['opcode'] = 'Improper Input'
+                    return jsonify(ret)
             else:
                 ret['opcode'] = 'Illegal'
                 return jsonify(ret)
@@ -134,7 +133,7 @@ class api(basicusermanager):
                     return jsonify(ret)
                 
                 order   = jsonINPUT['order']
-                print(order)
+                
                 if year and week and day and order:
                     userID = self.getUID(email)
                     if inTime(day=day):

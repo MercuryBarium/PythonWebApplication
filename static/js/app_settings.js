@@ -129,4 +129,25 @@ async function get_settings() {
     }
 }
 
+async function save_settings() {
+    if (confirm('Are you sure you want to save these settings?')) {
+        const raw_fetch = await fetch('/event_handler', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({'changes': changes})
+        })
+        const clean_fetch = await raw_fetch.json()
+        console.log(clean_fetch)
+        window.location.reload()
+    }
+    
+}
+
+save_button.onclick = function(){
+    save_settings()
+}
+
 get_settings()

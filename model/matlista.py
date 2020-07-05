@@ -624,13 +624,24 @@ def inTime(day):
         day = datetime.datetime.strptime(day, '%Y-%m-%d')
     except:
         return False
-    day += datetime.timedelta(hours=9)
+    with db_conn().cursor() as conn:
+        conn.execute('SELECT event_enabled, time_of_execution FROM events WHERE name="Last Orders";')
+        if conn.rowcount > 0:
+            data = conn.fetchone()
+            event_enabled = data['event_enabled']
+            if not event_enabled:
+                return True
+            
+            t = data['time_of_execution'].split(':')
+            hours = int(t[0])
+            minutes = int(t[1])
+            day += datetime.timedelta(hours=hours, minutes=minutes)
 
-    now = datetime.datetime.today()
+            now = datetime.datetime.today()
 
-    if now < day:
-        return True
-    else:
-        return False
+            if now < day:
+                return True
+            else:
+                return False
 
 

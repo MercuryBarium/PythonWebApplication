@@ -2,13 +2,13 @@
     {
         "name": "Order Notifications",
         "method": "order_notify",
-        "day": "any-any-any",
+        "day": "any",
         "time_of_execution": "11:00"
     },
     {
         "name": "Last orders",
         "method": "None",
-        "day": "any-any-any",
+        "day": "non-event",
         "time_of_execution": "09:00"
     }
 ]
