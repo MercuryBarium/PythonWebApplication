@@ -273,4 +273,23 @@ class api(basicusermanager):
                             })
             return jsonify(ret)
 
+        @self.route('/auto_verify', methods=['POST'])
+        def verify():
+            app_json = request.get_json()
+            email   = app_json['email']
+            token   = app_json['token']
+            print(email)
+            print(token)
+            ret = {'opcode': 'exit'}
+            if email:
+                if self.checkuserexists(email):
+                    if self.verifyuser(email, token):
+                        ret['opcode'] = 'success'
+                        return jsonify(ret)
+                    else:
+                        return jsonify(ret)
+                else:
+                    return jsonify(ret)
+            else:
+                return jsonify(ret)
         #============================================

@@ -26,8 +26,10 @@
     <div id="messages"></div>
 
     <div class="container">
-        <div class="col-xl-1-12 border shadow p-3 mb-5 bg-white rounded">
-            <h3>An email with your verification token has been sent</h3>
+        <div class="m-2 col-xl-1-12 border shadow p-3 mb-5 bg-white rounded" id="status">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
         </div>
     </div>
 
@@ -40,32 +42,8 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
         integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
         crossorigin="anonymous"></script>
-    <script>
-        const thisURL   = new URL(location.toString())
-        
-        var emailinput  = document.getElementById('emailinput')
-        if (thisURL.searchParams.get('email')){
-            var hiddenemail     = document.createElement('input')
-            hiddenemail.type    = 'hidden'
-            var email           = thisURL.searchParams.get('email')
-            hiddenemail.value   = email
-            hiddenemail.name    = 'email'
-            emailinput.appendChild(hiddenemail)
-        } else {
-            emailinput.className= 'form-group'
-            var label           = document.createElement('label')
-            label.htmlFor       = 'email'
-            label.innerText     = 'Email: '
-
-            var userEmailInput  = document.createElement('input')
-            userEmailInput.className    = 'form-control'
-            userEmailInput.type         = 'email'
-            userEmailInput.name         = 'email'
-
-            emailinput.appendChild(label)
-            emailinput.appendChild(userEmailInput)
-        }
-    </script>
+    <script src="{{url_for('static', filename='js/common.js')}}"></script>
+    <script src="{{url_for('static', filename='js/verifyme.js')}}"></script>
 </body>
 
 </html>

@@ -26,23 +26,32 @@
   <div id="messages"></div>
   <div class="container border-bottom">
     <div class="row row-cols-1">
-      <div class="col border shadow p-3 mb-5 bg-white rounded" id="login">
-        <form action="/signin" method="post">
-          <h3>Login</h3>
+      <div class="col border shadow p-3 mb-5 bg-white rounded" id="register">
+        <form action="/signup" method="post">
+          <h3>Register</h3>
           <div class="form-group">
             <label for="email">Email: </label>
-            <input type="email" class="form-control" name="email" id="loginemail" aria-describedby="emailHelpId">
+            <input type="email" class="form-control" name="email" id="regemail" aria-describedby="emailHelpId"
+              placeholder="example@etc.com">
+            <small id="emailHelpId" class="form-text text-muted">Must be a valid email address</small>
+          </div>
+          <div class="form-group">
+            <label for="name">Full name: </label>
+            <input type="text" name="name" id="regname" class="form-control" placeholder="Nikolas Tesla"
+              aria-describedby="name">
+            <small id="helpId" class="text-muted">Type in your full name</small>
           </div>
           <div class="form-group">
             <label for="password">Password: </label>
-            <input type="password" class="form-control" name="password" id="loginpass">
+            <input type="password" class="form-control" name="password" id="reqpass" placeholder="ABCabc#&$123">
           </div>
-          <button type="submit" class="btn btn-primary">login</button>
+          <div class="form-group">
+            <label for="confirmation">Confirm: </label>
+            <input type="password" class="form-control" name="confirmation" id="confirmation"
+              placeholder="Repeat password">
+          </div>
+          <button type="submit" class="btn btn-primary">Register</button>
         </form>
-        <div class="col row-cols-2 m-5">
-          <a class="m-2" href="/forgotpassword">Forgot Password</a>
-          <a href="/register">Register</a>
-        </div>
       </div>
     </div>
   </div>
@@ -58,11 +67,11 @@
   <script>
     const thisURL = new URL(location.toString())
 
-    if (thisURL.searchParams.get('signinerror')) {
-      var loginpage = document.getElementById('login')
+    if (thisURL.searchParams.get('signuperror')) {
+      var loginpage = document.getElementById('register')
       var child = document.createElement('div')
       child.className = 'alert alert-danger m-2'
-      errorText = thisURL.searchParams.get('signinerror').replace(new RegExp('-', 'g'), ' ')
+      errorText = thisURL.searchParams.get('signuperror').replace(new RegExp('-', 'g'), ' ')
       child.innerText = errorText
       loginpage.appendChild(child)
     }

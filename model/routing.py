@@ -1,5 +1,6 @@
 from model.schedule import event_handler, render_template, request, send_mail
 from flask import redirect, make_response
+from urllib.parse import quote
 
 class getters(event_handler):
     def __init__(self):
@@ -14,6 +15,14 @@ class getters(event_handler):
                 return redirect('/dashboard')
             else:
                 return render_template('index.html')
+
+        @self.route('/register', methods=['GET'])
+        def register():
+            email, code = self.retAUTHCODE(request.cookies.get('loginsession'))
+            if code == 0 or code == 1:
+                return redirect('/dashboard')
+            else:
+                return render_template('register.html')
 
         @self.route('/dashboard', methods=['GET'])
         def dashboard():
@@ -66,6 +75,10 @@ class getters(event_handler):
                 return redirect('/index?success=You-successfully-logged-out')
             else:
                 return redirect('/index')
+
+        @self.route('/wait_for_verify', methods=['GET'])
+        def wait_for_verify():
+            return render_template('autoverify.html')
         #============================================
 
 class posters(getters):
@@ -97,7 +110,7 @@ class posters(getters):
                             return redirect('/index?signinerror=Invalid-login-credentials')
                         
                         elif opCode == 3:
-                            return redirect('/verifyuser?email=%s' % email)
+                            return redirect('/index?signinerror=You-need-to-verify-your-account-befor-logging-in')
                     else:
                         return redirect('/index?signinerror=Invalid-login-credentials')
                 else:
@@ -128,8 +141,8 @@ class posters(getters):
             if email and self.checkuserexists(email):
                 token, created = self.makepasswordresettoken(email)
                 if created:
-                    send_mail(email, 'Food Truck: Password reset token', render_template('emailtemplate.html') % ('Password reset token:', token))
-                    return redirect('/forgotpassword?email=%s' % email)
+                    send_mail(email, 'Food Truck: Password reset token', render_template('emails/password_reset_mail.html', email=email, token=quote(token)))
+                    return redirect('/forgotpassword?success=A-reset-token-has-been-sent-to-your-email')
                 else:
                     return '<h1>Internal Server Error</h1>'
             else:
@@ -165,30 +178,16 @@ class posters(getters):
                 if password == confirmation:
                     code, token = self.CreateNewUser(email, name, password)
                     if code == 1:
-                        send_mail(email, 'Food Truck: Verification Token', render_template('emailtemplate.html') % ('Verification Token', token))
-                        return redirect('/verifyuser?email=%s' % email)
+                        send_mail(email, 'Food Truck: Verification Token', render_template('emails/verifyemail.html', email=email, token=quote(token)))
+                        return redirect('/index?success=An-email-with-your-verification-token-has-been-sent')
                     elif code == 2:
-                        return redirect('/index?signuperror=Email-address-is-already-in-use')
+                        return redirect('/register?signuperror=Email-address-is-already-in-use')
                     elif code == 3:
-                        return redirect('/index?signuperror=Name-is-already-in-use')
+                        return redirect('/register?signuperror=Name-is-already-in-use')
                     else:
-                        return redirect('/index?signuperror=Both-name-and-email-is-already-in-use')
+                        return redirect('/register?signuperror=Both-name-and-email-is-already-in-use')
                 else:
-                    return redirect('/index?signuperror=Password-and-confirmation-needs-to-match')
+                    return redirect('/register?signuperror=Password-and-confirmation-needs-to-match')
             else:
-                return redirect('/index?signuperror=All-fields-needs-to-be-filled-out')
+                return redirect('/register?signuperror=All-fields-needs-to-be-filled-out')
 
-        @self.route('/verify', methods=['POST'])
-        def verify():
-            email   = request.form.get('email')
-            token   = request.form.get('token')
-            if email:
-                if self.checkuserexists(email):
-                    if self.verifyuser(email, token):
-                        return redirect('/index?success=Success,-new-user-is-now-verified')
-                    else:
-                        return redirect('/verifyuser?email=%s&verificationerror=Token-is-invalid' % email)
-                else:
-                    return redirect('/verifyuser?verificationerror=User-does-not-exist')
-            else:
-                return redirect('/verifyuser?verificationerror=No-email-specified')
