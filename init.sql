@@ -18,9 +18,9 @@ CREATE TABLE users(
 CREATE TABLE vertokens(email text, token text);
 CREATE TABLE loginsessions(email text, secret text);
 CREATE TABLE passwordreset(email text, secret text);
-CREATE TABLE menues(year int, weeknumber int, day text, menu JSON);
+CREATE TABLE menues(year int, weeknumber int, day text, menu text);
 CREATE TABLE admintokens(email text, token text);
-CREATE TABLE orders(userid int, year int , weeknumber int, day text, foodorder JSON);
+CREATE TABLE orders(userid int, year int , weeknumber int, day text, foodorder text);
 CREATE TABLE events(name text, method text, day text, time_of_execution text, event_enabled boolean DEFAULT true);
 
 GRANT UPDATE, INSERT, SELECT ON users TO pythonhttp@localhost;
