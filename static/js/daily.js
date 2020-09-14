@@ -1,3 +1,5 @@
+//A simple script that connects to my rest api and retrieves the orders for the day
+
 async function dailyMain() {
     $('#pageCONTENT').html('')
     $('#pageCONTENT').append(spinner())

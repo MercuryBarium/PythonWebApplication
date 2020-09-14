@@ -1,3 +1,6 @@
+//I use bootstrap so in order to make the rest of the code a bit shorter I made
+//this script containing a few functions that returns HTML objects. error msg's etc
+
 function spinner() {
     var d = document.createElement('div')
     d.className = 'spinner-border text-primary'

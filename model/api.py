@@ -219,24 +219,7 @@ class api(basicusermanager):
             email, code = self.retAUTHCODE(request.cookies.get('loginsession'))
             ret = {'code': code, 'msg':  self.AUTHCODES[code]}
             if code == 1:
-                with db_conn() as conn:
-                    today = datetime.datetime.today().date()
-                    ret['orders'] = []
-                    conn.execute('SELECT menu FROM menues WHERE day="%s";' % (today.isoformat()))
-                    if conn.rowcount > 0:
-                        menus = json.loads(conn.fetchone()['menu'])
-                        for m in menus:
-                            m = b64decode(m.encode('utf-8')).decode('utf-8')
-                            ret['orders'].append({'food': m, 'amount': 0})
-
-                        conn.execute('SELECT foodorder FROM orders WHERE day="%s";' % (today.isoformat()))
-                        if conn.rowcount > 0:
-                            individualOrders = conn.fetchall()
-                            for i in individualOrders:
-                                i = json.loads(i['foodorder'])
-                                for o in i:
-                                    ret['orders'][o['item']]['amount'] += o['amount']
-                    
+                ret['orders'] = self.daily_report()
             return jsonify(ret)
 
 
@@ -293,3 +276,23 @@ class api(basicusermanager):
             else:
                 return jsonify(ret)
         #============================================
+    def daily_report(self):
+        with db_conn() as conn:
+            today = datetime.datetime.today().date()
+            orders = []
+            conn.execute('SELECT menu FROM menues WHERE day="%s";' % (today.isoformat()))
+            if conn.rowcount > 0:
+                menus = json.loads(conn.fetchone()['menu'])
+                for m in menus:
+                    m = b64decode(m.encode('utf-8')).decode('utf-8')
+                    orders.append({'food': m, 'amount': 0})
+
+                conn.execute('SELECT foodorder FROM orders WHERE day="%s";' % (today.isoformat()))
+                if conn.rowcount > 0:
+                    individualOrders = conn.fetchall()
+                    for i in individualOrders:
+                        i = json.loads(i['foodorder'])
+                        for o in i:
+                            orders[o['item']]['amount'] += o['amount']
+            return orders
+                    

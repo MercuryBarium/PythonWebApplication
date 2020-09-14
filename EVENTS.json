@@ -3,12 +3,27 @@
         "name": "Order Notifications",
         "method": "order_notify",
         "day": "any",
-        "time_of_execution": "11:00"
+        "time_of_execution": "11:00",
+        "event_data": ["empty"]
     },
     {
         "name": "Last orders",
         "method": "None",
         "day": "non-event",
-        "time_of_execution": "09:00"
+        "time_of_execution": "09:00",
+        "event_data": ["empty"]
+    },
+    {
+        "name": "Email Order To Resturaunt",
+        "method": "send_orders_to_restaurant",
+        "day": "any",
+        "time_of_execution": "09:00",
+        "event_data": [
+            {
+                "name": "Emails",
+                "type": "string-list",
+                "data": []
+            }
+        ]
     }
 ]

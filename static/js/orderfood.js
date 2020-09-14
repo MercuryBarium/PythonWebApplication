@@ -95,7 +95,7 @@ async function getMenues() {
         page.append(firstRow)
 
         var secondRow = document.createElement('div')
-        secondRow.className = 'row'
+        secondRow.className = 'row row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-3'
         for (let i = 0; i < data['menus'].length; i++) {
             if (data['menus'][i]['menu'].length > 0) {
                 var orderCOl = document.createElement('div')

@@ -1,9 +1,115 @@
-from model.api import api, db_conn, send_mail, render_template, jsonify, datetime
+from model.api import api, db_conn, send_mail, render_template, jsonify, datetime, getCurrentWeekAndYear
 from flask import request
-import schedule, datetime, json, threading, time
-from base64 import b64decode
+import schedule, json, threading, time
+from base64 import b64decode, b64encode
 import schedule
 
+def type_check(template, test, layer=0):
+    if ("type" and "name" and "data" in template) and ("type" and "name" and "data" in test):
+        if template["name"] == test["name"] and template["type"] == test["type"]:
+            if template["type"] == "int":
+                if type(test["data"]) == int:
+                    if "min" in template and "min" in test:
+                        if not (template["min"] == test["min"]):
+                            return None, False
+                        if not(test["data"] >= template["min"]):
+                            return None, False
+
+                    if "max" in template and "max" in test:
+                        if not (template["max"] == test["max"]):
+                            return None, False
+                        if not(test["data"] <= template["max"]):
+                            return None, False
+
+                    pass
+                else:
+                    return None, False
+            
+            elif template["type"] == "string":
+                if type(test["data"]) == str:
+                    test["data"] = b64encode(test["data"].encode("utf-8")).decode("utf-8")
+                else:
+                    return None, False
+            
+            elif template["type"] == "float":
+                if type(test["data"]) == float:
+                    if "min" in template and "min" in test:
+                        if not (template["min"] == test["min"]):
+                            return None, False
+                        if not(test["data"] >= template["min"]):
+                            return None, False
+
+                    if "max" in template and "max" in test:
+                        if not (template["max"] == test["max"]):
+                            return None, False
+                        if not(test["data"] <= template["max"]):
+                            return None, False
+                    pass
+                else:
+                    return None, False
+            
+            elif template["type"] == "int-list":
+                if type(test["data"]) == list:
+                    for item in test["data"]:
+                        if type(item) == int:
+                            if "min" in template and "min" in test:
+                                if not (template["min"] == test["min"]):
+                                    return None, False
+                                if not(item >= template["min"]):
+                                    return None, False
+
+                            if "max" in template and "max" in test:
+                                if not (template["max"] == test["max"]):
+                                    return None, False
+                                if not(item <= template["max"]):
+                                    return None, False
+                            pass
+                        else:
+                            return None, False
+            
+            elif template["type"] == "float-list":
+                if type(test["data"]) == list:
+                    for item in test["data"]:
+                        if type(item) == float:
+                            if "min" in template and "min" in test:
+                                if not (template["min"] == test["min"]):
+                                    return None, False
+                                if not(item >= template["min"]):
+                                    return None, False
+
+                            if "max" in template and "max" in test:
+                                if not (template["max"] == test["max"]):
+                                    return None, False
+                                if not(item <= template["max"]):
+                                    return None, False
+                            pass
+                        else:
+                            return None, False
+            
+            elif template["type"] == "string-list":
+                if type(test["data"]) == list:
+                    for i in range(len(test["data"])):
+                        if type(test["data"][i]) == str:
+                            test["data"][i] = b64encode(test["data"][i].encode("utf-8")).decode("utf-8")
+                            pass
+                        else:
+                            return None, False
+            
+            return test, True
+        
+    else:
+        layer += 1
+        if len(template) == len(test):
+            for i in range(len(template)):
+                test[i], check = type_check(template[i], test[i], layer)
+                if check:
+                    pass
+                else:
+                    return None, False
+            
+            return test, True
+        else:
+            return None, False
 
 
 class event_handler(api):
@@ -17,7 +123,8 @@ class event_handler(api):
             if conn.rowcount == 0:
                 initial_events = json.loads(open('./EVENTS.json').read())
                 for e in initial_events:
-                    conn.execute('INSERT INTO events VALUES ("%s", "%s", "%s", "%s", true);' % (e['name'], e['method'], e['day'], e['time_of_execution']))
+                    print("INSERT INTO events VALUES ('%s', '%s', '%s', '%s', true, '%s');" % (e['name'], e['method'], e['day'], e['time_of_execution'], json.dumps(e['event_data'])))
+                    conn.execute("INSERT INTO events VALUES ('%s', '%s', '%s', '%s', true, '%s');" % (e['name'], e['method'], e['day'], e['time_of_execution'], json.dumps(e['event_data'])))
         
         
         @self.route('/event_handler', methods=['POST'])
@@ -42,6 +149,7 @@ class event_handler(api):
                                 change_enabled  =   bool(change['event_enabled'])
                                 change_time     =   datetime.datetime.strptime(change['time_of_execution'], '%H:%M')
                                 change_time     =   change_time.strftime('%H:%M')
+                                original_event_data = json.loads(e['event_data'])
 
                                 conn.execute('UPDATE events SET event_enabled=%r, time_of_execution="%s" WHERE name="%s";' % (
                                     change_enabled, 
@@ -139,6 +247,10 @@ class event_handler(api):
                                     send_mail(email, 'Order Notification', render_template(
                                         'emails/ordernotification.html', orders=orders))
         methods.append(order_notify)
+
+        def send_orders_to_restaurant(self):
+            print('send_orders_to_restaurant')
+        methods.append(send_orders_to_restaurant)
 
         ret = {}
         for method in methods:

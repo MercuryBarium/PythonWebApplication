@@ -204,7 +204,7 @@ async function editmenus(weeknumber) {
     pageCONTENT.append(topRow)
 
     var secondROW = document.createElement('div')
-    secondROW.className = 'row'
+    secondROW.className = 'row row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-3'
     for (let i = 0; i < content['menus'].length; i++) {
         secondROW.append(menCol(content['menus'][i]['day'], i, content['menus'][i]['menu']))
     }
