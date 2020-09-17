@@ -142,7 +142,6 @@ class event_handler(api):
                     if conn.rowcount > 0:
                         for e in conn.fetchall():
                             
-                            #try:
                             if e['name'] in changes:
                                 
                                 change          =   changes[e['name']]
@@ -151,21 +150,25 @@ class event_handler(api):
                                 change_time     =   change_time.strftime('%H:%M')
                                 original_event_data = json.loads(e['event_data'])
 
-                                conn.execute('UPDATE events SET event_enabled=%r, time_of_execution="%s" WHERE name="%s";' % (
-                                    change_enabled, 
-                                    change_time,
-                                    e['name']
-                                ))
-                                if conn.rowcount > 0:
-                                    ret['results'].append({
-                                        'name': change,
-                                        'result': 'success'
-                                    })
-                                else:
-                                    ret['results'].append({
-                                        'name': change,
-                                        'result': 'failed'
-                                    })
+                                filtered_event_data, check = type_check(original_event_data, changes['event_data'])
+
+                                if check:
+                                    conn.execute("UPDATE events SET event_enabled=%r, time_of_execution='%s', event_data='%s' WHERE name='%s';" % (
+                                        change_enabled, 
+                                        change_time,
+                                        json.dumps(filtered_event_data),
+                                        e['name']
+                                    ))
+                                    if conn.rowcount > 0:
+                                        ret['results'].append({
+                                            'name': change,
+                                            'result': 'success'
+                                        })
+                                    else:
+                                        ret['results'].append({
+                                            'name': change,
+                                            'result': 'failed'
+                                        })
                                     
                         self.refresh_schedule()
             return jsonify(ret)
@@ -182,6 +185,7 @@ class event_handler(api):
 
                     if conn.rowcount > 0:
                         for e in conn.fetchall():
+                            e['event_data'] = json.loads(e['event_data'])
                             ret['events'].append(e)
             
             return jsonify(ret)
