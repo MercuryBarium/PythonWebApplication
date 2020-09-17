@@ -8,3 +8,4 @@ test.py
 SSL/*
 env/*
 EMAIL_CONFIG.json
+DATABASE_CONFIG.json
